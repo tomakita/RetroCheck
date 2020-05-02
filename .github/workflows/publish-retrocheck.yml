@@ -28,6 +28,6 @@ jobs:
         # we can get the release name.
         run: |
           echo "Github username: ${GITHUB_ACTOR}"
-          cd pbm
+          cd src
           ./gradlew test
           ./gradlew -Pversion=0.1.${{github.run_number}} publish

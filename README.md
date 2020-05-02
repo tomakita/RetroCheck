@@ -1,13 +1,13 @@
-# pbm
+# RetroCheck
 
-![Release](https://github.com/tomakita/pbm/workflows/Release/badge.svg)
+![Release](https://github.com/tomakita/retrocheck/workflows/Release/badge.svg)
 
-pbm is a tool that makes it easy to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using pbm, you specify a data model and correctness properties for your system, and pbm generates instances of that data model and uses them to exercise your system and check the correctness properties that you specified.
+RetroCheck is a tool that makes it easy to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you specify a data model and correctness properties for your system, and RetroCheck generates instances of that data model and uses them to exercise your system and check the correctness properties that you specified.
 
 ## Goals
 
 - Make automated end-to-end testing of distributed systems significantly easier.
-- Test systems that are "untestable": test systems without refactoring them in order to make them "testable".  pbm requires almost no changes to the system under test.
+- Test systems that are "untestable": test systems without refactoring them in order to make them "testable".  RetroCheck requires almost no changes to the system under test.
 - Test systems that operate asynchronously and/or recursively.
 - Monitor systems in production using the same assertions used in tests.
 - Reuse the same data model for all tests, rather than writing test data by hand for each test.
@@ -33,9 +33,9 @@ Here are definitions that will help to understand the rest of this document.
 
 ## Features
 
-pbm provides libraries for:
+RetroCheck provides libraries for:
 
-- Associating assertions with functions.  pbm injects the bytecode for assertions immediately after the bytecode for the functions with which they are associated, such that the assertion for a function *f* is executed immediately after *f*, for all executions of *f*.
+- Associating assertions with functions.  RetroCheck injects the bytecode for assertions immediately after the bytecode for the functions with which they are associated, such that the assertion for a function *f* is executed immediately after *f*, for all executions of *f*.
 - Mocking calls to services which are external to the system.
 - Taking actions based upon the results of assertions.
 - Generating instances of entities in such a way that the constraints between all entities are satisfied.
@@ -45,35 +45,35 @@ pbm provides libraries for:
 - Emitting assertion events that can be consumed by test runners.
 - Knowing when a test case is over without polling or timeouts, even when testing asynchronous systems.
 
-Usage of pbm isn't "all or nothing" -- most of these features can be opted into.
+Usage of RetroCheck isn't "all or nothing" -- most of these features can be opted into.
 
 ## Example
 
-There's a runnable example in [/example](https://github.com/tomakita/pbm/tree/master/example#example).
+There's a runnable example in [/example](https://github.com/tomakita/retrocheck/tree/master/example#example).
 
 ## Implementation Details
 
-pbm is implemented as four Java libraries:
+RetroCheck is implemented as four Java libraries:
 
-### [pbm-assertion](https://github.com/tomakita/pbm/tree/master/pbm/assertion#pbm-assertion)
+### [retrocheck.assertion](https://github.com/tomakita/retrocheck/tree/master/src/assertion#retrocheck.assertion)
 
 Uses AspectJ to associate assertions with functions, and to execute those assertions.  Supports service location, for integration with things like Spring's IoC container.
 
 Builds with Maven.
 
-### [pbm-mock](https://github.com/tomakita/pbm/tree/master/pbm/mock#pbm-mock)
+### [retrocheck.mock](https://github.com/tomakita/retrocheck/tree/master/src/mock#retrocheck.mock)
 
 Uses AspectJ to replace calls to network dependencies with calls to arbitrary, user-defined functions.
 
 Builds with Maven.
 
-### [pbm-graph](https://github.com/tomakita/pbm/tree/master/pbm/graph#pbm-graph)
+### [retrocheck.graph](https://github.com/tomakita/retrocheck/tree/master/src/graph#retrocheck.graph)
 
 Expresses entities, constraints, and data models.  Loads and unloads data models into and out of data stores.  Visualizes data models using cytoscape.js.
 
 Builds with Gradle.
 
-### [pbm-convenience](https://github.com/tomakita/pbm/tree/master/pbm/convenience#pbm-convenience)
+### [retrocheck.convenience](https://github.com/tomakita/retrocheck/tree/master/src/convenience#retrocheck.convenience)
 
 Conveniently configures assertions and test runners to interact with Redis.  Conveniently generates entity values.  Conveniently orchestrates tests: starts and stops tests, and loads and unloads data models from data stores automatically as tests start and stop.
 
@@ -81,13 +81,13 @@ Builds with Gradle.
 
 ### Dependencies
 
-- pbm-assertion: AspectJ
-- pbm-mock: AspectJ
-- pbm-graph: Jackson (for graph visualization), Cytoscape.js (for graph visualization), junit-quickcheck (for entity generation; will eventually be moved to pbm-convenience), Awaitility (for waiting for tests to complete; will eventually be moved to pbm-convenience), pbm-convenience (will eventually not be a dependency)
-- pbm-convenience: Redis (for emitting assertion results to test runners, and for mock data storage), Redisson, pbm-assertion
+- retrocheck.assertion: AspectJ
+- retrocheck.mock: AspectJ
+- retrocheck.graph: Jackson (for graph visualization), Cytoscape.js (for graph visualization)
+- retrocheck.convenience: Redis (for emitting assertion results to test runners, and for mock data storage), Redisson, retrocheck.assertion, junit-quickcheck (for entity generation), Awaitility (for waiting for tests to complete)
 
 All libraries require JRE 1.8 or above.
 
 ## Contributing
 
-Contributions are welcome!  See [CONTRIBUTING](https://github.com/tomakita/pbm/blob/master/CONTRIBUTING.md) for notes on contributing, as well as a list of issues that might be a good starting point, if you'd like to get started as a contributor.  For large changes, please open an issue to discuss the change before writing any code.  Thanks for your contributions!
+Contributions are welcome!  See [CONTRIBUTING](https://github.com/tomakita/retrocheck/blob/master/CONTRIBUTING.md) for notes on contributing, as well as a list of issues that might be a good starting point, if you'd like to get started as a contributor.  For large changes, please open an issue to discuss the change before writing any code.  Thanks for your contributions!
