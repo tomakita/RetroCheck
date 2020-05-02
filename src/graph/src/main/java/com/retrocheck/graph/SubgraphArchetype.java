@@ -14,6 +14,13 @@ public class SubgraphArchetype {
         this.edges = edges;
     }
 
+    public Subgraph induce(String newName) {
+        return new Subgraph(false)
+                .withName(newName)
+                .withNodes(nodes.stream().map(n -> (Node<?>)n.copyWithNewId()).collect(Collectors.toList()))
+                .withEdges(edges.stream().map(e -> (Edge<?, ?>)e.deepCopy()).collect(Collectors.toList()));
+    }
+
     public Subgraph induce(String newName, boolean setNodeNames) {
         return new Subgraph(setNodeNames)
                 .withName(newName)

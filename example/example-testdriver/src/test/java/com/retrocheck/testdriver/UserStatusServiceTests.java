@@ -48,12 +48,10 @@ class UserStatusServiceTests {
 				new Node<>(
 						"request id", // Used to identify each entity.
 						Integer.class, // The type of each entity -- required due to type erasure.
-						x -> x,
 						generator, // This is how the Node type knows how to generator Integer instances.
 						"http", // Tells the DataLoader how to load instances of this entity.
 						true, // Is this entity used to invoke the system?
-						Probability.ALWAYS, // TODO: get rid of this since it's the default val. With what probability should this entity be present in tests?
-						true);
+						true); // Does this entity need to be deleted at the end of each test?
 		Node<UserStatus> userStatus =
 				new Node<>(
 						"user status",
@@ -106,7 +104,9 @@ class UserStatusServiceTests {
 		// [DataLoaders]: TODO: truncater, entry points, when data is inserted/deleted/truncated
 		DefaultDataLoader dataLoader = new DefaultDataLoader(loader, unloader, redis);
 
-		// [Testers]: TODO: orchestrates the entire test, pre/process/post must be run in that order.
+		// This object orchestrates the entire test.  Note that its preprocess, process, and postprocess
+		// methods must all be called, and in that order.  Preprocess and postprocess should be called
+		// once per test, whereas process may be called an arbitrary number of times per test.
 		DefaultTester tester = new DefaultTester("RetroCheck Example");
 		// [Graphs]: TODO: acyclic, subgraphs, subgraph archetypes, seeding
 		DefaultGraph graph = new DefaultGraph().withNodes(nodes).withEdges(edges);
@@ -118,12 +118,22 @@ class UserStatusServiceTests {
 		// Redis), and unload the data model from the system under test.
 		for (int i = 0; i < 99; i++) {
 			System.out.println("Test iteration: " + i);
-			// [TestResults]: TODO: use the return value of this method to check for failures -- actually add
-			//       				   that to the code here.  show how to get the seed on failure!
-			TestResult result = tester.process(dataLoader::orchestrate, new Outcome("userStatus"));
+
+			TestResult result =
+					tester.process(
+							dataLoader::orchestrate, // Lambda defining how data is loaded into and unloaded
+							// from the system under test.
+							new Outcome("userStatus")); // This Outcome object tells DefaultTester
+							// the name of the assertion which indicates the end of a test.
+
+			// DefaultTester.process returns a TestResult object, which contains a list of assertions
+			// which failed during the test (if any), and the seed used to generate data during the test.
+			if (result.hasFailures()) {
+				System.out.println("Test failed with seed: " + result.getSeed());
+			}
 		}
 
-		// [Visualization]: TODO: generates visualization files, where it's written to, how to use it
+		// This generates visualization files, for use in understanding and debugging your data model and various instances of it.
 		tester.postprocess();
 		// This disposes of the test driver's connection to Redis.
 		dataLoader.destroy();

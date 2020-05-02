@@ -17,7 +17,37 @@ On `/userstatus`, UserStatusService serves requests for a user's status -- wheth
 
 We'll write a RetroCheck assertion for `/userstatus`.  It only requires two changes to the code under test (not including the assertion code itself).  The first change is an annotation that we add to the method we want to test, and the second change is a method call that configures the application to use RetroCheck.
 
-SNIPPET FROM example-app/build.gradle GOES HERE
+Here is a snippet from `example-app/build.gradle`, showing what's required in order to use RetroCheck in `example-app`:
+
+```groovy
+plugins {
+	...
+
+	// This plugin is required in order to use RetroCheck assertions and mocks.
+	id 'io.freefair.aspectj.post-compile-weaving' version '4.1.6'
+}
+
+...
+
+dependencies {
+	// This library is required in order to use assertions.
+	implementation files('assertion-0.1.1.jar')
+	// This tells the AspectJ plugin where to find the RetroCheck assertion code.
+	aspect files('assertion-0.1.1.jar')
+	// This library is required in order to use mocks.
+	implementation files('mock-0.1.1.jar')
+	// This tells the AspectJ plugin where to find the RetroCheck mock code.
+	aspect files('mock-0.1.1.jar')
+	// This library is required in order to configure RetroCheck in a less verbose way,
+	// and also to allow assertions and mocks to interact with Redis.
+	implementation files('convenience-0.1.1.jar')
+
+	// This library is a dependency of the convenience library.
+	compile group: 'org.redisson', name: 'redisson', version: '3.12.0'
+
+	...
+}
+```
 
 Here is the controller that implements `/userstatus`:
 
@@ -127,13 +157,38 @@ public class MemcachedConfig {
 
 Here is the test driver code that invokes the `/userstatus` end point in UserStatusService, which will invoke its assertion code, as well.  When the assertion we've written in UserStatusService succeeds or fails, messages will be put onto Redis pub-sub channels, and our test driver will be notified.  This test driver code runs as a junit test.
 
-SNIPPET FROM example-testdriver/build.gradle GOES HERE
+Here is a snippet from `example-testdriver/build.gradle`, showing what's required in order to use RetroCheck in `example-testdriver`:
+
+```groovy
+...
+
+dependencies {
+	// This library is required in order to construct the data model of the system under test.
+	implementation files('graph-0.1.1.jar')
+	// This library contains convenience classes that make test orchestration easier.
+	implementation files('convenience-0.1.1.jar')
+	// This library is a dependency of the convenience library, above.
+	implementation files('assertion-0.1.1.jar')
+
+	// These libraries are dependencies of the convenience library.
+	compile group: 'com.pholser', name: 'junit-quickcheck-generators', version: '0.9'
+	compile group: 'com.googlecode.xmemcached', name: 'xmemcached', version: '2.4.6'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compile group: 'org.redisson', name: 'redisson', version: '3.12.0'
+	compile group: 'org.awaitility', name: 'awaitility', version: '4.0.2'
+	compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.2'
+	compile group: 'com.pholser', name: 'junit-quickcheck-core', version: '0.9.1'
+}
+
+...
+```
 
 TestDriver/UserStatusServiceTests.java:
 ```java
 @SpringBootTest
 class UserStatusServiceTests {
 
+	// [Redis]
 	// Redis allows RetroCheck to know when assertions in the system under test have failed,
 	// and when tests have ended.
 	private Redis redis = new Redis("redis://localhost:6379");
@@ -142,13 +197,14 @@ class UserStatusServiceTests {
 	// or not) of users is stored.
 	private MemcachedClient memcached = new XMemcachedClient("localhost",11211);
 	// This is an object that the tests use to send HTTP requests to the system under test.
-	private TestAppService service = new TestAppService(new RestTemplateBuilder());
+	private TestAppClient testAppClient = new TestAppClient();
 
 	UserStatusServiceTests() throws IOException {}
 
 	@Test
 	void test() {
 
+		// [Generators]
 		// We use Generators to generate (pseudorandomly) instances of various types.
 		// DefaultGenerator has generators for primitive types, and others can be added
 		// by using the ".with()" method.
@@ -158,17 +214,16 @@ class UserStatusServiceTests {
 								UserStatus.class,
 								(random, status) -> new UserStatus(random.nextInt(), random.nextBoolean()));
 
+		// [Nodes]
 		// Each entity in the system is represented by a Node.
 		Node<Integer> requestId =
 				new Node<>(
 						"request id", // Used to identify each entity.
 						Integer.class, // The type of each entity -- required due to type erasure.
-						x -> x,
 						generator, // This is how the Node type knows how to generator Integer instances.
 						"http", // Tells the DataLoader how to load instances of this entity.
 						true, // Is this entity used to invoke the system?
-						Probability.ALWAYS, // With what probability should this entity be present in tests?
-						true);
+						true); // Does this entity need to be deleted at the end of each test?
 		Node<UserStatus> userStatus =
 				new Node<>(
 						"user status",
@@ -176,21 +231,21 @@ class UserStatusServiceTests {
 						generator,
 						"memcached");
 
-		List<NodeShape<?>> nodes = new ArrayList<>(Arrays.asList(requestId,	userStatus));
+		List<Node<?>> nodes = Arrays.asList(requestId,	userStatus);
 
-		List<EdgeShape<?, ?>> edges =
-				new ArrayList<>(
-						Arrays.asList(
-								new Edge<>(
-										// This edge goes from the requestId node...
-										requestId,
-										// ...to the userStatus node.
-										userStatus,
-										// A constraint that's placed on our two nodes:
-										// v (userStatus) must have the same Id as u (requestId).
-										(u, v) -> v.withId(u),
-										// The probability with which the above constraint is satisfied.
-										new Probability(50))));
+		// [Edges]
+		List<Edge<?, ?>> edges =
+					Arrays.asList(
+							new Edge<>(
+									// This edge goes from the requestId node...
+									requestId,
+									// ...to the userStatus node.
+									userStatus,
+									// A constraint that's placed on our two nodes:
+									// v (userStatus) must have the same Id as u (requestId).
+									(u, v) -> v.withId(u),
+									// The probability with which the above constraint is satisfied.
+									new Probability(50)));
 
 		Map<String, Function<?, ?>> loader = new HashMap<>();
 
@@ -204,7 +259,7 @@ class UserStatusServiceTests {
 		});
 
 		// This tells the DataLoader how to execute HTTP requests.
-		loader.put("http", (Integer entity) -> service.get(entity));
+		loader.put("http", (Integer entity) -> testAppClient.get(entity));
 
 		// This tells the DataLoader how to unload UserStatus entities from memcached
 		// at the end of each test.
@@ -217,10 +272,15 @@ class UserStatusServiceTests {
 			}
 		});
 
-		DataLoader dataLoader = new DataLoader(loader, unloader, redis);
+		// [DataLoaders]
+		DefaultDataLoader dataLoader = new DefaultDataLoader(loader, unloader, redis);
 
-		Tester<NodeShape<?>, EdgeShape<?, ?>> tester = new Tester<>("RetroCheck example");
-		Graph<NodeShape<?>, EdgeShape<?, ?>> graph = new Graph<>().withNodes(nodes).withEdges(edges);
+		// This object orchestrates the entire test.  Note that its preprocess, process, and postprocess
+		// methods must all be called, and in that order.  Preprocess and postprocess should be called
+		// once per test, whereas process may be called an arbitrary number of times per test.		
+		DefaultTester tester = new DefaultTester("RetroCheck Example");
+		// [Graphs]
+		DefaultGraph graph = new DefaultGraph().withNodes(nodes).withEdges(edges);
 		tester.preprocess(graph);
 
 		// You can call this method in a loop, because each time it's called, it will generate
@@ -228,12 +288,145 @@ class UserStatusServiceTests {
 		// system under test (using Nodes marked as entry points), wait for the test to end (using
 		// Redis), and unload the data model from the system under test.
 		for (int i = 0; i < 99; i++) {
-			// userStatus is the name of the assertion whose execution signifies the end of a test.
-			tester.process(dataLoader::orchestrateConveniently, "userStatus");
+			System.out.println("Test iteration: " + i);
+			
+			TestResult result =
+					tester.process(
+							dataLoader::orchestrate, // A lambda defining how data is loaded into and unloaded
+							// from the system under test.
+							new Outcome("userStatus")); // This Outcome object tells DefaultTester
+							// the name of the assertion which indicates the end of a test.
+
+			// DefaultTester.process returns a TestResult object, which contains a list of assertions
+			// which failed during the test (if any), and the seed used to generate data during the test.
+			if (result.hasFailures()) {
+				System.out.println("Test failed with seed: " + result.getSeed());
+			}
 		}
 
+		// This generates visualization files, for use in understanding and debugging your data model and various instances of it.
 		tester.postprocess();
+		// This disposes of the test driver's connection to Redis.
 		dataLoader.destroy();
 	}
 }
 ```
+
+### Redis
+
+Redis is used by `retrocheck.convenience` for assertion eventing.  If can also be used for key-value storage, if that's something that you want to use during testing, e.g. as a backing data store for mocks.  If you don't want to use `retrocheck.convenience`, then Redis isn't a dependency.
+
+### Generators
+
+In this example, we use `retrocheck.convenience.DefaultGenerator` to generate entity instances.  This class implements the `retrocheck.convenience.Generator` interface, which is what you'll want to implement if you want to make your own generator class.  Out of the box, `DefaultGenerator` can generate values for Java primitives (`int`, `boolean`, etc), and support for more types can be added via the `DefaultGenerator.with` method (calls to this method can be chained, e.g. `generator.with(...).with(...)`).
+
+In some situations, you'll want to ensure that the values generated for some type are unique.  To support this, `DefaultGenerator` has a `withUnique` method:
+
+```java
+new DefaultGenerator()
+	.withUnique(
+		Boolean.class, 
+		(r, status, unique) -> unique.compute(
+			"uniqueBoolean", // A unique generator is identified by this value, along with its type (Boolean, here).
+			() -> r.nextBoolean())); // A lambda specifying how this kind of value should be generated.
+```
+
+For various reasons, you might want to use multiple instances of `DefaultGenerator`.  This is supported -- RetroCheck will unify all `DefaultGenerator` instances as the nodes they've been assigned to are processed by the `Graph` that they're part of.  This means that a single seed is used by all `DefaultGenerators` at runtime, which makes reproducibility of test failures easier.
+
+### Nodes
+
+The `Node<T>` constructor has other overloads.  Here's the one that allows all of its fields to be set:
+
+```java
+public Node(
+	String name, // The name of the node -- used for visualization.  Required.
+	Class<T> entitySchema, // The type of the node.  Required.
+	Function<T, T> refinement, // A lambda that defines a transformation on the value generated (by the Generator passed in, below) for this node.  Optional -- defaults to the identity function.
+	Generator generator, // A Generator that generates values for the type of this node.  Required.
+	String dataLoaderName, // The name of the DataLoader that should load this node into the system under test.  Required.
+	boolean isEntryPoint, // Is this node the entry point of the system under test?  Optional -- defaults to false.
+	Probability probability, // The probability with which this node should be included in our data model.  Optional -- defaults to Probability.ALWAYS a/k/a new Probability(100), so the node will be included with 100% probability.
+	boolean isTransient) // Does this node need to be deleted at the end of each test run?  Optional -- defaults to false.
+```
+
+### Edges
+
+For each edge, we specify a probability with which that edge is traversed, i.e. a probability with which the constraint represented by the edge is satisfied in our data model.  But what if we want to specify a *set* of edges, and only choose one edge from the set (i.e. choose from a set of edges in a mutually exclusive way)?  RetroCheck supports this by allowing you to tag each edge with a `setId`.  Edges with the same `setId` form a set *E* of mutually exclusive edges, and the sum *s* of the probabilities of all edges in *E* must satisfy 0 <= *s* <= 100.
+
+In addition to the constructor shown in this example, the `Edge<U, V>` type has other constructors.  Here's the one that allows all of its fields to be set:
+
+```java
+public Edge(
+	Node<U> u, // An edge from u...  Required.
+	Node<V> v, // ...to v.  Required.
+	BiFunction<U, V, V> refinement, // The constraint represented by the edge.  Required.
+	Probability probability, // The probability with which the edge is expressed in the data model.  Optional -- defaults to Probability.ALWAYS.
+	String setId) // The set of which this edge is a member.  Optional -- defaults to a value which indicates that the edge is not part of any set.
+```
+
+### DataLoaders
+
+A `DataLoader` (implemented by `DefaultDataLoader` in the example) is how RetroCheck orchestrates the un/loading of data into and out of the system under test.  The `loader` map loads loads each generated entity, and the `unloader` map unloads each generated entity.  In some cases, though, this won't be enough.  For example, if the system under test generates and persists its own data during a test run, it may be necessary to make sure that data is deleted, too.  To support this, `DefaultDataLoader` uses a `truncater` (specified as a map, just like `loader` and `unloader`), which specifies lambdas for doing ad-hoc cleanup, e.g. truncating a database table.
+
+### Graphs
+
+A `Graph` (implemented by `DefaultGraph` in the example) represents the data model of the system under test.  From a graph, RetroCheck generates instances of entities, and loads them into the system under test.  RetroCheck treats graphs as directed graphs, and each graph must be acyclic.
+
+In RetroCheck, graphs are made of nodes and edges (as shown in the example), but they can also be made of `Subgraph` instances:
+
+```java
+Node<Integer> a = new Node<>("a", Integer.class, generator, null, true);
+Node<Integer> b = new Node<>("b", Integer.class, generator, null, true);
+Subgraph subgraph = new Subgraph(false).withName("test subgraph").withNodes(Arrays.asList(a, b));
+DefaultGraph graph = new DefaultGraph().withSubgraphs(Arrays.asList(subgraph));
+```
+
+Subgraphs allow you to abstract various parts of a graph, in order to make it easier to reason about.  Subgraphs also allow you to reuse parts of graphs in multiple tests.  To further support reuse, RetroCheck has a `SubgraphArchetype` class, which allows you to make copies of subgraphs.  You might want to do this if, for example, you wanted to create multiple copies of a subgraph, but with different node names in each copy:
+
+```java
+SubgraphArchetype archetype = new SubgraphArchetype(nodes,  edges);
+Subgraph subgraphCopy = archetype.induce("greatNodeNamePrefix");
+```
+
+With each graph, RetroCheck associates a seed.  This seed is of type `long`, and it's used to seed the source of randomness that RetroCheck uses to generate entity instances.  If you want to re-run a test and ensure that the exact same sequence of entity instances are generated by RetroCheck, then you can manually set the seed value on a graph:
+
+```java
+long arbitrarySeed = 895;
+Graph graph = new DefaultGraph().withNodes(nodes).reSeed(arbitrarySeed);
+```
+
+### Testers
+
+A `Tester` (implemented by `DefaultTester` in this example) is used to orchestrate a RetroCheck test.  This entails:
+
+1. Loading data into data stores.
+2. Invoking the system under test.
+3. Listening for the end of each test.
+4. Unloading data from data stores, as well as data truncation.
+5. Reporting the results of a test.
+
+There are multiple ways in which a `Tester` can listen for the end of each test:
+
+* Via the `Outcome` instance passed to `Tester.process`.  In this case, the `Tester` will listen (via Redis) for the completion of an assertion method with this name (unfortunately, fully-qualified method names aren't supported, yet), and will end the test when it knows the specified assertion method has completed.
+* Via a `com.retrocheck.assertion.AssertionResult` returned by assertion methods.
+* Via a combination of the two ways outlined above.
+
+All assertion methods can return either `boolean` or `com.retrocheck.assertion.AssertionResult`.  `com.retrocheck.assertion.AssertionResult` is a class that contains information about the result of an assertion:
+
+```java
+public AssertionResult(
+	boolean isSuccess, // Was the assertion successful?
+	String continuation, // What is the name of the assertion method that indicates the end of the current test?  This will be returned to the Tester, and listened for accordingly.  If an assertion method supplies its own name for this value, then the Tester will listen for the *next* invocation of this assertion method.  This is a way of supporting recursive systems.
+	boolean isExecutionComplete) // Should the test end right now, ignoring all previous continuation/outcome names?
+```
+
+If you don't want `DefaultTester` to wait for a particular outcome, you can do that with `Outcome.completeImmediately`, which can be specified in `Outcome`'s constructor:
+
+```java
+// If you want each test case to end immediately, pass `true` for completeImmediately.
+public Outcome(String name, boolean completeImmediately)
+```
+
+### Visualization
+
+TODO: visualization, where it's written to, how to use it

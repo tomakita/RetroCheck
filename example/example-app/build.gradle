@@ -2,6 +2,7 @@ plugins {
 	id 'org.springframework.boot' version '2.2.2.RELEASE'
 	id 'io.spring.dependency-management' version '1.0.8.RELEASE'
 	id 'java'
+	// This plugin is required in order to use RetroCheck assertions and mocks.
 	id 'io.freefair.aspectj.post-compile-weaving' version '4.1.6'
 }
 
@@ -15,22 +16,22 @@ repositories {
 }
 
 dependencies {
+	// This library is required in order to use assertions.
 	implementation files('assertion-0.1.1.jar')
+	// This tells the AspectJ plugin where to find the RetroCheck assertion code.
 	aspect files('assertion-0.1.1.jar')
+	// This library is required in order to use mocks.
 	implementation files('mock-0.1.1.jar')
+	// This tells the AspectJ plugin where to find the RetroCheck mock code.
 	aspect files('mock-0.1.1.jar')
+	// This library is required in order to configure RetroCheck in a less verbose way,
+	// and also to allow assertions and mocks to interact with Redis.
 	implementation files('convenience-0.1.1.jar')
 
 	compile group: 'com.googlecode.xmemcached', name: 'xmemcached', version: '2.4.6'
+	// This library is required by the convenience library to interact with Redis.
 	compile group: 'org.redisson', name: 'redisson', version: '3.12.0'
 	compile group: 'org.springframework', name: 'spring-web', version: '5.2.2.RELEASE'
 	implementation 'org.springframework.boot:spring-boot-starter'
 	compile 'org.springframework.boot:spring-boot-starter-web'
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
-		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
-	}
-}
-
-test {
-	useJUnitPlatform()
 }

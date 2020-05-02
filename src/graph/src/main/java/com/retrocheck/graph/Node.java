@@ -40,6 +40,18 @@ public class Node<T> {
         this.isTransient = false;
     }
 
+    public Node(String name, Class<T> entitySchema, Generator generator, String dataLoaderName, boolean isEntryPoint, boolean isTransient) {
+        this.name = name;
+        this.entitySchema = entitySchema;
+        this.generator = generator;
+        this.refinement = x -> x;
+        id = UUID.randomUUID();
+        this.dataLoaderName = dataLoaderName;
+        this.isEntryPoint = isEntryPoint;
+        this.probability = 100;
+        this.isTransient = isTransient;
+    }
+
     public Node(String name, Class<T> entitySchema, Generator generator, String dataLoaderName, boolean isEntryPoint, Probability probability) {
         this.name = name;
         this.entitySchema = entitySchema;
