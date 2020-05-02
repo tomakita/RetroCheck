@@ -1,6 +1,6 @@
 # Example
 
-As an example of pbm's style of testing, we'll do a test of a small Spring Boot application called UserStatusService.
+As an example of RetroCheck's style of testing, we'll do a test of a small Spring Boot application called UserStatusService.
 
 ## Running the Example System
 
@@ -15,7 +15,7 @@ From `/example`, run `docker-compose up -d`.  This starts the memcached and Redi
 
 On `/userstatus`, UserStatusService serves requests for a user's status -- whether or not a user is logged in.  UserStatusService does this by querying memcached with the user's ID.
 
-We'll write a pbm assertion for `/userstatus`.  It only requires two changes to the code under test (not including the assertion code itself).  The first change is an annotation that we add to the method we want to test, and the second change is a method call that configures the application to use pbm.
+We'll write a RetroCheck assertion for `/userstatus`.  It only requires two changes to the code under test (not including the assertion code itself).  The first change is an annotation that we add to the method we want to test, and the second change is a method call that configures the application to use RetroCheck.
 
 SNIPPET FROM example-app/build.gradle GOES HERE
 
@@ -33,7 +33,7 @@ public class UserStatusController {
     }
 
     @RequestMapping("/userstatus")
-    // The MonitorWith annotation tells pbm where to find the assertion for
+    // The MonitorWith annotation tells RetroCheck where to find the assertion for
     // the userStats method.
     @MonitorWith(UserStatusControllerAssertions.class)
     public UserStatus userStatus(@RequestParam(value="userId") Integer userId)
@@ -77,7 +77,7 @@ public class UserStatusControllerAssertions {
     // It returns a boolean, and has access to UserStatusController.userStatus's
     // argument list, as well as the value it returned, and the UserStatusController
     // instance on which it was invoked.
-    // Assertions are invoked by pbm as the system under test runs, and their
+    // Assertions are invoked by RetroCheck as the system under test runs, and their
     // return values are sent to Redis for use by test running code.
     public boolean userStatus(Integer userId,
                               UserStatus result,
@@ -97,7 +97,7 @@ public class UserStatusControllerAssertions {
 }
 ```
 
-And here is the code that configures the application to use pbm (the code in this file also configures memcached):
+And here is the code that configures the application to use RetroCheck (the code in this file also configures memcached):
 
 UserStatusService/MemcachedConfig.java:
 ```java
@@ -106,7 +106,7 @@ public class MemcachedConfig {
 
     public MemcachedConfig(@Autowired ApplicationContext context) {
 
-        // This configures pbm to emit metadata to Redis as assertions
+        // This configures RetroCheck to emit metadata to Redis as assertions
         // succeed and fail.  This metadata will be used by our test driver,
         // which will also be connected to Redis.
         ResultEmitter.connect(
@@ -134,7 +134,7 @@ TestDriver/UserStatusServiceTests.java:
 @SpringBootTest
 class UserStatusServiceTests {
 
-	// Redis allows pbm to know when assertions in the system under test have failed,
+	// Redis allows RetroCheck to know when assertions in the system under test have failed,
 	// and when tests have ended.
 	private Redis redis = new Redis("redis://localhost:6379");
 
@@ -219,7 +219,7 @@ class UserStatusServiceTests {
 
 		DataLoader dataLoader = new DataLoader(loader, unloader, redis);
 
-		Tester<NodeShape<?>, EdgeShape<?, ?>> tester = new Tester<>("pbm example");
+		Tester<NodeShape<?>, EdgeShape<?, ?>> tester = new Tester<>("RetroCheck example");
 		Graph<NodeShape<?>, EdgeShape<?, ?>> graph = new Graph<>().withNodes(nodes).withEdges(edges);
 		tester.preprocess(graph);
 

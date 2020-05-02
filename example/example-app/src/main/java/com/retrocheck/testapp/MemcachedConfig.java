@@ -1,6 +1,6 @@
-package com.pbm.testapp;
+package com.retrocheck.testapp;
 
-import com.pbm.convenience.ResultEmitter;
+import com.retrocheck.convenience.ResultEmitter;
 import net.rubyeye.xmemcached.MemcachedClient;
 import net.rubyeye.xmemcached.XMemcachedClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +15,7 @@ public class MemcachedConfig {
 
     public MemcachedConfig(@Autowired ApplicationContext context) {
 
-        // This configures pbm to emit metadata to Redis as assertions
+        // This configures RetroCheck to emit metadata to Redis as assertions
         // succeed and fail.  This metadata will be used by our test driver,
         // which will also be connected to Redis.
         ResultEmitter.connect(

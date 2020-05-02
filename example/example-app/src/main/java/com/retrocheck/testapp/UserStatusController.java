@@ -1,9 +1,9 @@
-package com.pbm.testapp;
+package com.retrocheck.testapp;
 
 import java.time.Instant;
 import java.util.concurrent.TimeoutException;
 
-import com.pbm.assertion.MonitorWith;
+import com.retrocheck.assertion.MonitorWith;
 import net.rubyeye.xmemcached.MemcachedClient;
 import net.rubyeye.xmemcached.exception.MemcachedException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +21,13 @@ public class UserStatusController {
     }
 
     @RequestMapping("/userstatus")
-    // The MonitorWith annotation tells pbm where to find the assertion for
+    // The MonitorWith annotation tells RetroCheck where to find the assertion for
     // the userStats method.
     @MonitorWith(UserStatusControllerAssertions.class)
     public UserStatus userStatus(@RequestParam(value="userId") Integer userId)
             throws InterruptedException, MemcachedException, TimeoutException {
 
-        System.out.println("===============serving request for user id = " + userId);
+        System.out.println("Serving request for user id = " + userId);
 
         return findUserStatus(userId);
     }

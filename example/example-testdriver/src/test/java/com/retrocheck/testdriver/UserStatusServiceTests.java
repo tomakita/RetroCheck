@@ -1,12 +1,12 @@
-package com.pbm.testdriver;
+package com.retrocheck.testdriver;
 
-import com.pbm.convenience.*;
+import com.retrocheck.convenience.*;
 import net.rubyeye.xmemcached.MemcachedClient;
 import net.rubyeye.xmemcached.XMemcachedClient;
 import net.rubyeye.xmemcached.exception.MemcachedException;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import pbm.graph.*;
+import com.retrocheck.graph.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -16,7 +16,7 @@ import java.util.function.Function;
 @SpringBootTest
 class UserStatusServiceTests {
 
-	// Redis allows pbm to know when assertions in the system under test have failed,
+	// Redis allows RetroCheck to know when assertions in the system under test have failed,
 	// and when tests have ended.
 	private Redis redis = new Redis("redis://localhost:6379");
 

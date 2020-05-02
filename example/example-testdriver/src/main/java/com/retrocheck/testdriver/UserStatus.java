@@ -1,4 +1,4 @@
-package com.pbm.testapp;
+package com.retrocheck.testdriver;
 
 import java.time.Instant;
 
@@ -6,6 +6,11 @@ public class UserStatus {
     private Integer userId;
     private boolean isLoggedIn;
     private Instant timestamp;
+
+    public UserStatus(int userId, boolean isLoggedIn) {
+        this.userId = userId;
+        this.isLoggedIn = isLoggedIn;
+    }
 
     public UserStatus(int userId, boolean isLoggedIn, Instant timestamp) {
         this.userId = userId;
@@ -23,6 +28,11 @@ public class UserStatus {
 
     public Instant getTimestamp() {
         return timestamp;
+    }
+
+    public UserStatus withId(int id) {
+        userId = id;
+        return this;
     }
 
     @Override
