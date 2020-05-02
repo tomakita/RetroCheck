@@ -55,25 +55,25 @@ There's a runnable example in [/example](https://github.com/tomakita/retrocheck/
 
 RetroCheck is implemented as four Java libraries:
 
-### [retrocheck.assertion](https://github.com/tomakita/retrocheck/tree/master/src/assertion#retrocheck.assertion)
+### [retrocheck.assertion](https://github.com/tomakita/retrocheck/tree/master/src/assertion#retrocheckassertion)
 
 Uses AspectJ to associate assertions with functions, and to execute those assertions.  Supports service location, for integration with things like Spring's IoC container.
 
 Builds with Maven.
 
-### [retrocheck.mock](https://github.com/tomakita/retrocheck/tree/master/src/mock#retrocheck.mock)
+### [retrocheck.mock](https://github.com/tomakita/retrocheck/tree/master/src/mock#retrocheckmock)
 
 Uses AspectJ to replace calls to network dependencies with calls to arbitrary, user-defined functions.
 
 Builds with Maven.
 
-### [retrocheck.graph](https://github.com/tomakita/retrocheck/tree/master/src/graph#retrocheck.graph)
+### [retrocheck.graph](https://github.com/tomakita/retrocheck/tree/master/src/graph#retrocheckgraph)
 
 Expresses entities, constraints, and data models.  Loads and unloads data models into and out of data stores.  Visualizes data models using cytoscape.js.
 
 Builds with Gradle.
 
-### [retrocheck.convenience](https://github.com/tomakita/retrocheck/tree/master/src/convenience#retrocheck.convenience)
+### [retrocheck.convenience](https://github.com/tomakita/retrocheck/tree/master/src/convenience#retrocheckconvenience)
 
 Conveniently configures assertions and test runners to interact with Redis.  Conveniently generates entity values.  Conveniently orchestrates tests: starts and stops tests, and loads and unloads data models from data stores automatically as tests start and stop.
 
