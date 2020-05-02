@@ -1,0 +1,32 @@
+body { 
+    font: 14px helvetica neue, helvetica, arial, sans-serif;
+  }
+
+  /* .half {
+    float: left;
+    width: 50%;
+    }
+  
+  #cy_l {
+    top: 15%;
+    bottom: 15%;
+    height: 70%;
+    width: 30%;
+    position: absolute;
+    right: 10%;
+    left: 10%;
+  } */
+
+  #cy_r {
+    top: 0%;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    right: 0%;
+    left: 0%;
+  }
+
+  table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+    }

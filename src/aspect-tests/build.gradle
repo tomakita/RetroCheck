@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'io.freefair.aspectj.post-compile-weaving' version '4.1.6'
+}
+
+repositories {
+    // Use jcenter for resolving dependencies.
+    // You can declare any Maven/Ivy/file repository here.
+    jcenter()
+}
+
+dependencies {
+    compile project(':assertion')
+    compile project(':mock')
+    aspect project(':mock')
+    aspect project(':assertion')
+
+    // This dependency is used by the application.
+    implementation 'com.google.guava:guava:28.0-jre'
+
+    // Use JUnit test framework
+    testImplementation 'junit:junit:4.12'
+}
+
+application {
+    // Define the main class for the application.
+    mainClassName = 'aspect.tests.App'
+}

@@ -1,0 +1,36 @@
+plugins {
+	id 'org.springframework.boot' version '2.2.2.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.8.RELEASE'
+	id 'java'
+}
+
+group = 'com.pbm'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation files('graph-0.1.1.jar')
+	implementation files('convenience-0.1.1.jar')
+	implementation files('assertion-0.1.1.jar')
+
+	compile group: 'com.pholser', name: 'junit-quickcheck-generators', version: '0.9'
+	compile group: 'com.googlecode.xmemcached', name: 'xmemcached', version: '2.4.6'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compile group: 'org.redisson', name: 'redisson', version: '3.12.0'
+	compile group: 'org.awaitility', name: 'awaitility', version: '4.0.2'
+	compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.10.2'
+	compile group: 'com.pholser', name: 'junit-quickcheck-core', version: '0.9.1'
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+
+
+}
+
+test {
+	useJUnitPlatform()
+}

@@ -1,0 +1,3 @@
+rootProject.name = 'retrocheck'
+
+include ':assertion', ':mock', ':graph', ':convenience', 'aspect-tests'

@@ -1,0 +1,8 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# We need this file so that gradlew works in the CI build, and also for users who clone the repo.
+!gradle/wrapper/gradle-wrapper.jar
+
+# Ignore Gradle build output directory
+build/
