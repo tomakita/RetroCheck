@@ -20,8 +20,8 @@
 *.rar
 
 # We need this file so that gradlew works in the CI build, and also for users who clone the repo.
-!pbm/gradle/wrapper/gradle-wrapper.jar
-!pbm/pbm-graph/gradle/wrapper/gradle-wrapper.jar
+!src/gradle/wrapper/gradle-wrapper.jar
+!src/graph/gradle/wrapper/gradle-wrapper.jar
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
