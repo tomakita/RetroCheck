@@ -5,10 +5,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
-public class TestAppService {
+public class TestAppClient {
     private final RestTemplate restTemplate;
 
-    public TestAppService() {
+    public TestAppClient() {
         this.restTemplate = new RestTemplateBuilder().build();
     }
 

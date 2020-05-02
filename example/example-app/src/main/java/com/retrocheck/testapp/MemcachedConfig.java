@@ -15,11 +15,12 @@ public class MemcachedConfig {
 
     public MemcachedConfig(@Autowired ApplicationContext context) {
 
+        // [Configuration]: // TODO: custom configuration, explain service location,
+        //                           turning off aspects
         // This configures RetroCheck to emit metadata to Redis as assertions
         // succeed and fail.  This metadata will be used by our test driver,
         // which will also be connected to Redis.
         ResultEmitter.connect(
-                //"redis://172.17.0.3:6379", // Address of Redis.
                 "redis://localhost:6379", // Address of Redis.
                 false,
                 context::getBean); // Service locator method.
@@ -28,7 +29,6 @@ public class MemcachedConfig {
     @Bean
     public MemcachedClient memcached() throws IOException {
 
-        //return new XMemcachedClient("172.17.0.2",11211);
         return new XMemcachedClient("localhost",11211);
     }
 }

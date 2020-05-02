@@ -16,6 +16,7 @@ import java.util.function.Function;
 @SpringBootTest
 class UserStatusServiceTests {
 
+	// [Redis]: TODO: not required, can also use for k/v storage
 	// Redis allows RetroCheck to know when assertions in the system under test have failed,
 	// and when tests have ended.
 	private Redis redis = new Redis("redis://localhost:6379");
@@ -24,25 +25,25 @@ class UserStatusServiceTests {
 	// or not) of users is stored.
 	private MemcachedClient memcached = new XMemcachedClient("localhost",11211);
 	// This is an object that the tests use to send HTTP requests to the system under test.
-	private TestAppService service = new TestAppService();
+	private TestAppClient testAppClient = new TestAppClient();
 
 	UserStatusServiceTests() throws IOException {}
 
 	@Test
 	void test() {
 
+		// [Generators]: TODO: uniqueness, unification, Generator interface
 		// We use Generators to generate (pseudorandomly) instances of various types.
 		// DefaultGenerator has generators for primitive types, and others can be added
 		// by using the ".with()" method.
-		// TODO: uniqueness, unification, Generator interface
 		DefaultGenerator generator =
 				new DefaultGenerator()
 						.with(
 								UserStatus.class,
 								(random, status) -> new UserStatus(random.nextInt(), random.nextBoolean()));
 
+		// [Nodes]: TODO: other overloads
 		// Each entity in the system is represented by a Node.
-		// TODO:
 		Node<Integer> requestId =
 				new Node<>(
 						"request id", // Used to identify each entity.
@@ -51,7 +52,7 @@ class UserStatusServiceTests {
 						generator, // This is how the Node type knows how to generator Integer instances.
 						"http", // Tells the DataLoader how to load instances of this entity.
 						true, // Is this entity used to invoke the system?
-						Probability.ALWAYS, // With what probability should this entity be present in tests?
+						Probability.ALWAYS, // TODO: get rid of this since it's the default val. With what probability should this entity be present in tests?
 						true);
 		Node<UserStatus> userStatus =
 				new Node<>(
@@ -62,7 +63,7 @@ class UserStatusServiceTests {
 
 		List<Node<?>> nodes = Arrays.asList(requestId,	userStatus);
 
-		// TODO: acyclic
+		// [Edges]: TODO: multiedges, other overloads
 		List<Edge<?, ?>> edges =
 					Arrays.asList(
 							new Edge<>(
@@ -89,7 +90,7 @@ class UserStatusServiceTests {
 		});
 
 		// This tells the DataLoader how to execute HTTP requests.
-		loader.put("http", (Integer entity) -> service.get(entity));
+		loader.put("http", (Integer entity) -> testAppClient.get(entity));
 
 		// This tells the DataLoader how to unload UserStatus entities from memcached
 		// at the end of each test.
@@ -102,11 +103,12 @@ class UserStatusServiceTests {
 			}
 		});
 
-		// TODO: truncation
+		// [DataLoaders]: TODO: truncater, entry points, when data is inserted/deleted/truncated
 		DefaultDataLoader dataLoader = new DefaultDataLoader(loader, unloader, redis);
 
+		// [Testers]: TODO: orchestrates the entire test, pre/process/post must be run in that order.
 		DefaultTester tester = new DefaultTester("RetroCheck Example");
-		// TODO: subgraphs, subgraph archetypes
+		// [Graphs]: TODO: acyclic, subgraphs, subgraph archetypes, seeding
 		DefaultGraph graph = new DefaultGraph().withNodes(nodes).withEdges(edges);
 		tester.preprocess(graph);
 
@@ -116,14 +118,14 @@ class UserStatusServiceTests {
 		// Redis), and unload the data model from the system under test.
 		for (int i = 0; i < 99; i++) {
 			System.out.println("Test iteration: " + i);
-			// TODO: use the return value of this method to check for failures -- actually add
-			//       that to the code here.
-			tester.process(dataLoader::orchestrate, new Outcome("userStatus"));
+			// [TestResults]: TODO: use the return value of this method to check for failures -- actually add
+			//       				   that to the code here.  show how to get the seed on failure!
+			TestResult result = tester.process(dataLoader::orchestrate, new Outcome("userStatus"));
 		}
 
-		// TODO: generates visualization files, where it's written to, how to use it
+		// [Visualization]: TODO: generates visualization files, where it's written to, how to use it
 		tester.postprocess();
-		// TODO: disposes of redis connection
+		// This disposes of the test driver's connection to Redis.
 		dataLoader.destroy();
 	}
 }

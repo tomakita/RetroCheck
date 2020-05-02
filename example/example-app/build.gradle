@@ -17,6 +17,8 @@ repositories {
 dependencies {
 	implementation files('assertion-0.1.1.jar')
 	aspect files('assertion-0.1.1.jar')
+	implementation files('mock-0.1.1.jar')
+	aspect files('mock-0.1.1.jar')
 	implementation files('convenience-0.1.1.jar')
 
 	compile group: 'com.googlecode.xmemcached', name: 'xmemcached', version: '2.4.6'

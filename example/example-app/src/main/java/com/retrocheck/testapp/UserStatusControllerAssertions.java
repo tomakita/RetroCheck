@@ -17,13 +17,14 @@ public class UserStatusControllerAssertions {
         this.memcached = memcached;
     }
 
+    // [Assertions]: TODO: allows assertion method signatures; also talk about ctors;
+    //                        different ways of returning from assertions
     // This is an assertion for the UserStatusController.userStatus method.
     // It returns a boolean, and has access to UserStatusController.userStatus's
     // argument list, as well as the value it returned, and the UserStatusController
     // instance on which it was invoked.
     // Assertions are invoked by RetroCheck as the system under test runs, and their
     // return values are sent to Redis for use by test running code.
-    // TODO: allows assertion method signatures; also talk about ctors
     public boolean userStatus(Integer userId,
                               UserStatus result,
                               UserStatusController instance)

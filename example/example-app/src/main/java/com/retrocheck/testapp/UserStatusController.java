@@ -15,12 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserStatusController {
 
     private MemcachedClient memcached;
+    private MetricsClient metricsClient = new MetricsClient();
 
     public UserStatusController(@Autowired MemcachedClient memcached) {
         this.memcached = memcached;
     }
 
     @RequestMapping("/userstatus")
+    // [MonitorWith]: TODO: assertion location, 1:1
     // The MonitorWith annotation tells RetroCheck where to find the assertion for
     // the userStats method.
     @MonitorWith(UserStatusControllerAssertions.class)
@@ -28,6 +30,9 @@ public class UserStatusController {
             throws InterruptedException, MemcachedException, TimeoutException {
 
         System.out.println("Serving request for user id = " + userId);
+
+        // Due to mocking, this is actually a call to MockMetricsClient.emit.
+        metricsClient.emit();
 
         return findUserStatus(userId);
     }
