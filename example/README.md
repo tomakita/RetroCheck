@@ -2,6 +2,12 @@
 
 As an example of RetroCheck's style of testing, we'll do a test of a small Spring Boot application called UserStatusService.
 
+[Running the Example System](#Running-the-Example-System)  
+[Overview of the Test App](#Overview-of-example-testapp)  
+[Test App Details](#example-testapp-details)  
+[Overview of the Test Driver](#Overview-of-example-testdriver)  
+[Test Driver Details](#example-testdriver-details)
+
 ## Running the Example System
 
 Requirements:
@@ -57,6 +63,7 @@ UserStatusService/UserStatusController.java:
 public class UserStatusController {
 
     private MemcachedClient memcached;
+    private MetricsClient metricsClient = new MetricsClient();
 
     public UserStatusController(@Autowired MemcachedClient memcached) {
         this.memcached = memcached;
@@ -68,6 +75,11 @@ public class UserStatusController {
     @MonitorWith(UserStatusControllerAssertions.class)
     public UserStatus userStatus(@RequestParam(value="userId") Integer userId)
             throws InterruptedException, MemcachedException, TimeoutException {
+
+        System.out.println("Serving request for user id = " + userId);
+
+        // Due to mocking, this is actually a call to MockMetricsClient.emit.
+        metricsClient.emit();
 
         return findUserStatus(userId);
     }
@@ -114,6 +126,8 @@ public class UserStatusControllerAssertions {
                               UserStatusController instance)
             throws InterruptedException, MemcachedException, TimeoutException {
 
+        System.out.println("Running assertion for user id = " + userId);
+
         // We check to see if the user has a status in memcached.  If it does,
         // we make sure that status matches what is being returned by /userstatus.
         // Otherwise, we make sure that /userstatus is returning null.
@@ -123,6 +137,28 @@ public class UserStatusControllerAssertions {
         } else {
             return result == null;
         }
+    }
+}
+```
+
+Here is the `MetricsClient` implementation.  We'd like to mock the call to `MetricsClient.emit`:
+
+```java
+public class MetricsClient {
+    // The MockWith annotation tells RetroCheck where to find the mock for this method.
+    @MockWith(MetricsClientMock.class)
+    public void emit() {
+        // Imagine that there's code here that we don't want to execute during our tests.
+    }
+}
+```
+
+Here is the mock implementation of `MetricsClient`:
+
+```java
+public class MetricsClientMock {
+    public void emit() {
+        System.out.println("Mock MetricsClient invocation.");
     }
 }
 ```
@@ -155,7 +191,40 @@ public class MemcachedConfig {
 
 ## `example-testapp` Details
 
-x
+### MonitorWith
+
+The `@MonitorWith(A.class)` annotation associates a method `m` in the system under test with an assertion method `a`.  In order for RetroCheck to perform this association, the following rules must be satisfied:
+
+* `a` must be defined in class `A`
+* `a` must have the same name as `m`
+* `a` must not be overloaded
+* given the following signature for `m`: `R m(T t, U u)`, and assuming that `m` is defined on class `M`, `a` must have one of the following signatures:
+	* `public boolean a(T t, U u, R r)`
+	* `public boolean a(T t, U u, R r, M m)`
+	* `public boolean a(T t, U u, R r, Exception ex)`
+	* `public boolean a(T t, U u, R r, M m, Exception ex)`
+	* `public boolean a(T t, U u, R r, Exception ex, M m)`
+	* `public com.retrocheck.assertion.AssertionResult a(T t, U u, R r)`
+	* `public com.retrocheck.assertion.AssertionResult a(T t, U u, R r, M m)`
+	* `public com.retrocheck.assertion.AssertionResult a(T t, U u, R r, Exception ex)`
+	* `public com.retrocheck.assertion.AssertionResult a(T t, U u, R r, M m, Exception ex)`
+	* `public com.retrocheck.assertion.AssertionResult a(T t, U u, R r, Exception ex, M m)`
+
+Note: if `R` is `void`, then omit `R r` from each of the signatures, above.
+
+### Assertions
+
+As mentioned in the section above, assertions can return either `boolean` or `AssertionResult`.  For more information about the usage of `AssertionResult`, see [Testers](#Testers).
+
+### Mocks
+
+should be used sparingly, only for systems that we don't own, can make system difficult to reason about.  mock signature.
+
+implemented using `@MockWith`
+
+### Configuration
+
+custom configuration, explain service location, turning off aspects
 
 ## Overview of `example-testdriver`
 
@@ -192,7 +261,6 @@ TestDriver/UserStatusServiceTests.java:
 @SpringBootTest
 class UserStatusServiceTests {
 
-	// [Redis]
 	// Redis allows RetroCheck to know when assertions in the system under test have failed,
 	// and when tests have ended.
 	private Redis redis = new Redis("redis://localhost:6379");
@@ -208,7 +276,6 @@ class UserStatusServiceTests {
 	@Test
 	void test() {
 
-		// [Generators]
 		// We use Generators to generate (pseudorandomly) instances of various types.
 		// DefaultGenerator has generators for primitive types, and others can be added
 		// by using the ".with()" method.
@@ -218,7 +285,6 @@ class UserStatusServiceTests {
 								UserStatus.class,
 								(random, status) -> new UserStatus(random.nextInt(), random.nextBoolean()));
 
-		// [Nodes]
 		// Each entity in the system is represented by a Node.
 		Node<Integer> requestId =
 				new Node<>(
@@ -237,7 +303,6 @@ class UserStatusServiceTests {
 
 		List<Node<?>> nodes = Arrays.asList(requestId,	userStatus);
 
-		// [Edges]
 		List<Edge<?, ?>> edges =
 					Arrays.asList(
 							new Edge<>(
@@ -276,14 +341,12 @@ class UserStatusServiceTests {
 			}
 		});
 
-		// [DataLoaders]
 		DefaultDataLoader dataLoader = new DefaultDataLoader(loader, unloader, redis);
 
 		// This object orchestrates the entire test.  Note that its preprocess, process, and postprocess
 		// methods must all be called, and in that order.  Preprocess and postprocess should be called
 		// once per test, whereas process may be called an arbitrary number of times per test.		
 		DefaultTester tester = new DefaultTester("RetroCheck Example");
-		// [Graphs]
 		DefaultGraph graph = new DefaultGraph().withNodes(nodes).withEdges(edges);
 		tester.preprocess(graph);
 
