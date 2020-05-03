@@ -15,8 +15,6 @@ public class MemcachedConfig {
 
     public MemcachedConfig(@Autowired ApplicationContext context) {
 
-        // [Configuration]: // TODO: custom configuration, explain service location,
-        //                           turning off aspects
         // This configures RetroCheck to emit metadata to Redis as assertions
         // succeed and fail.  This metadata will be used by our test driver,
         // which will also be connected to Redis.

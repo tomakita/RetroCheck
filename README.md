@@ -2,15 +2,15 @@
 
 ![Release](https://github.com/tomakita/retrocheck/workflows/Release/badge.svg)
 
-RetroCheck is a tool that makes it easy to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you specify a data model and correctness properties for your system, and RetroCheck generates instances of that data model and uses them to exercise your system and check the correctness properties that you specified.
+RetroCheck is a tool that makes it easier to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you specify a data model and correctness properties for your system, and RetroCheck generates instances of that data model and uses them to exercise your system and check the correctness properties that you specified.
 
 ## Goals
 
 - Make automated end-to-end testing of distributed systems significantly easier.
-- Test systems that are "untestable": test systems without refactoring them in order to make them "testable".  RetroCheck requires almost no changes to the system under test.
+- Test systems that are "untestable": test systems without refactoring them in order to make them "testable".  RetroCheck requires almost no changes to the system under test, so it's easy to start using it, and it's also easy to stop using it.
 - Test systems that operate asynchronously and/or recursively.
 - Monitor systems in production using the same assertions used in tests.
-- Reuse the same data model for all tests, rather than writing test data by hand for each test.
+- Generate data satisfying the data model of your application, and reuse the same data model for all tests, rather than writing test data by hand for each test.
 - Exercise all assertions of correctness in the same test, so that interactions between functions and services can be tested.
 
 ## Definitions
@@ -45,11 +45,11 @@ RetroCheck provides libraries for:
 - Emitting assertion events that can be consumed by test runners.
 - Knowing when a test case is over without polling or timeouts, even when testing asynchronous systems.
 
-Usage of RetroCheck isn't "all or nothing" -- most of these features can be opted into.
+Usage of RetroCheck isn't "all or nothing" -- most of these features can be opted into.  RetroCheck isn't meant to replace unit or integration testing -- it's just another tool.
 
 ## Example
 
-There's a runnable example in [/example](https://github.com/tomakita/retrocheck/tree/master/example#example).
+There's a runnable example, along with documentation, in [/example](https://github.com/tomakita/retrocheck/tree/master/example#example).
 
 ## Implementation Details
 
@@ -59,25 +59,17 @@ RetroCheck is implemented as four Java libraries:
 
 Uses AspectJ to associate assertions with functions, and to execute those assertions.  Supports service location, for integration with things like Spring's IoC container.
 
-Builds with Maven.
-
 ### [retrocheck.mock](https://github.com/tomakita/retrocheck/tree/master/src/mock#retrocheckmock)
 
 Uses AspectJ to replace calls to network dependencies with calls to arbitrary, user-defined functions.
-
-Builds with Maven.
 
 ### [retrocheck.graph](https://github.com/tomakita/retrocheck/tree/master/src/graph#retrocheckgraph)
 
 Expresses entities, constraints, and data models.  Loads and unloads data models into and out of data stores.  Visualizes data models using cytoscape.js.
 
-Builds with Gradle.
-
 ### [retrocheck.convenience](https://github.com/tomakita/retrocheck/tree/master/src/convenience#retrocheckconvenience)
 
 Conveniently configures assertions and test runners to interact with Redis.  Conveniently generates entity values.  Conveniently orchestrates tests: starts and stops tests, and loads and unloads data models from data stores automatically as tests start and stop.
-
-Builds with Gradle.
 
 ### Dependencies
 
@@ -90,4 +82,8 @@ All libraries require JRE 1.8 or above.
 
 ## Contributing
 
-Contributions are welcome!  See [CONTRIBUTING](https://github.com/tomakita/retrocheck/blob/master/CONTRIBUTING.md) for notes on contributing, as well as a list of issues that might be a good starting point, if you'd like to get started as a contributor.  For large changes, please open an issue to discuss the change before writing any code.  Thanks for your contributions!
+Contributions are welcome!  See [CONTRIBUTING](https://github.com/tomakita/retrocheck/blob/master/CONTRIBUTING.md) for notes on contributing, as well as a list of issues that might be a good starting point, if you'd like to get started as a contributor.  For large changes, please open an issue to discuss the change before writing any code.
+
+For bug reports and feature requests, feel free to open an issue.
+
+Thanks for your contributions!

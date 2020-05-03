@@ -17,8 +17,6 @@ public class UserStatusControllerAssertions {
         this.memcached = memcached;
     }
 
-    // [Assertions]: TODO: allows assertion method signatures; also talk about ctors;
-    //                        different ways of returning from assertions
     // This is an assertion for the UserStatusController.userStatus method.
     // It returns a boolean, and has access to UserStatusController.userStatus's
     // argument list, as well as the value it returned, and the UserStatusController

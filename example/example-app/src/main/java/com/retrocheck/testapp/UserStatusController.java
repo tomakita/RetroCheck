@@ -22,7 +22,6 @@ public class UserStatusController {
     }
 
     @RequestMapping("/userstatus")
-    // [MonitorWith]: TODO: assertion location, 1:1
     // The MonitorWith annotation tells RetroCheck where to find the assertion for
     // the userStats method.
     @MonitorWith(UserStatusControllerAssertions.class)

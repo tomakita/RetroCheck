@@ -69,7 +69,6 @@ class UserStatusServiceTests {
 									// v (userStatus) must have the same Id as u (requestId).
 									(u, v) -> v.withId(u),
 									// The probability with which the above constraint is satisfied.
-									// TODO: Probability.ALWAYS
 									new Probability(50)));
 
 		Map<String, Function<?, ?>> loader = new HashMap<>();

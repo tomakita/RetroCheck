@@ -15,9 +15,9 @@
 
 Assertions are injected into the bytecode of the system under test using AspectJ's compile-time weaving.
 
-Assertions are associated with functions via the `@MonitorWith` (or `@ExceptionOnlyMonitorWith`, for assertions which are meant to handle exceptions thrown by functions) annotation, which has a single parameter of type Class.  This parameter represents the class which contains the assertion which should execute following the execution of the annotated function.  `@MonitorWith` can be applied to methods and constructors.
+Assertions are associated with functions via the `@MonitorWith` annotation, which has a single parameter of type Class.  This parameter represents the class which contains the assertion which should execute following the execution of the annotated function.  `@MonitorWith` can be applied to methods and constructors.
 
-When the aspect code detects the execution of a function which has been annotated with `@MonitorWith` (or `@ExceptionOnlyMonitorWith`), it performs service location.  Service location is implemented as a user-specifiable lambda.  By default, service location is just a reflective lookup of the class passed to the `@MonitorWith` annotation, followed by a lookup of the name of the function which was annotated.
+When the aspect code detects the execution of a function which has been annotated with `@MonitorWith`, it performs service location.  Service location is implemented as a user-specifiable lambda.  By default, service location is just a reflective lookup of the class passed to the `@MonitorWith` annotation, followed by a lookup of the name of the function which was annotated.
 
 If service location succeeds, the class and method that were located are memoized for later use, and then executed.  The result of the assertion is then passed to `AssertionEvent` instances, for handling by the user.
 

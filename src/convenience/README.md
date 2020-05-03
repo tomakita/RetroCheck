@@ -6,6 +6,7 @@ One of the overarching goals of RetroCheck is to be unopionated about the way th
 
 ## Features
 
+- Supplies default implementations of interfaces that are used for testing: `DefaultDataLoader`, `DefaultGenerator`, `DefaultGraph`, `DefaultRandomizer`, and `DefaultTester`
 - Creates a connection (one per consumer of retrocheck.convenience) to a Redis cluster (retrocheck.convenience assumes that you have access to a Redis cluster of at least one node).
 - Emits assertion results to Redis pub-sub channels (via `Emitter`).  Meant to be used by applications that execute assertions.
 - Listens to Redis pub-sub channels (via `Listener`).  Meant to be used by applications that do things with assertion results, such as test runners.
