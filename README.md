@@ -2,7 +2,7 @@
 
 ![Release](https://github.com/tomakita/retrocheck/workflows/Release/badge.svg)
 
-RetroCheck is a tool that makes it easier to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you specify a data model and correctness properties for your system, and RetroCheck generates instances of that data model and uses them to exercise your system and check the correctness properties that you specified.
+RetroCheck is a tool that makes it easier to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you first associate assertions with functions in the system under test, and you then specify a data model for that system.  RetroCheck will then generate instances of that data model and use them to exercise your system and to execute the assertions that you specified.
 
 For those who are familiar with [property-based testing](https://fsharpforfunandprofit.com/posts/property-based-testing/), RetroCheck could be described as property-based testing in which tests are composable, and in which dependent data generation is supported.
 
@@ -11,9 +11,9 @@ For those who are familiar with [property-based testing](https://fsharpforfunand
 - Make automated end-to-end testing of distributed systems significantly easier.
 - Test systems that are "untestable": test systems without refactoring them in order to make them "testable".  RetroCheck requires almost no changes to the system under test, so it's easy to start using it, and it's also easy to stop using it.
 - Test systems that operate asynchronously and/or recursively.
-- Monitor systems in production using the same assertions used in tests.
 - Generate data satisfying the data model of your application, and reuse the same data model for all tests, rather than writing test data by hand for each test.
 - Exercise all assertions of correctness in the same test, so that interactions between functions and services can be tested.
+- Monitor systems in production using the same assertions used in tests.
 
 ## Definitions
 
@@ -38,14 +38,13 @@ Here are definitions that will help to understand the rest of this document.
 RetroCheck provides libraries for:
 
 - Associating assertions with functions.  RetroCheck injects the bytecode for assertions immediately after the bytecode for the functions with which they are associated, such that the assertion for a function *f* is executed immediately after *f*, for all executions of *f*.
-- Mocking calls to services which are external to the system.
-- Taking actions based upon the results of assertions.
-- Generating instances of entities in such a way that the constraints between all entities are satisfied.
 - Specifying constraints on entities, and expressing constraints and entities as part of the complete data model of a system.
-- Visualizing a system's data model.
+- Generating instances of entities in such a way that the constraints between all entities are satisfied.
 - Loading and unloading a system's data model into and out of its corresponding data stores, in an order such that all constraints (e.g. foreign key constraints) are satisfied.
+- Visualizing a system's data model.
 - Emitting assertion events that can be consumed by test runners.
 - Knowing when a test case is over without polling or timeouts, even when testing asynchronous systems.
+- Mocking calls to services which are external to the system.
 
 Usage of RetroCheck isn't "all or nothing" -- most of these features can be opted into.  RetroCheck isn't meant to replace unit or integration testing -- it's just another tool.
 
