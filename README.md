@@ -1,6 +1,7 @@
 # RetroCheck
 
 ![Release](https://github.com/tomakita/retrocheck/workflows/Release/badge.svg)
+[![](https://jitpack.io/v/tomakita/RetroCheck.svg)](https://jitpack.io/#tomakita/RetroCheck)
 
 RetroCheck is a tool that makes it easier to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you first associate assertions with functions in the system under test, and you then specify a data model for that system.  RetroCheck will then generate instances of that data model and use them to exercise your system and to execute the assertions that you specified.
 
