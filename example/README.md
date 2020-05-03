@@ -2,11 +2,23 @@
 
 As an example of RetroCheck's style of testing, we'll do a test of a small Spring Boot application called UserStatusService.
 
-[Running the Example System](#Running-the-Example-System)  
-[Overview of the Test App](#Overview-of-example-testapp)  
-[Test App Details](#example-testapp-details)  
-[Overview of the Test Driver](#Overview-of-example-testdriver)  
-[Test Driver Details](#example-testdriver-details)
+1. [Running the Example System](#Running-the-Example-System)  
+1. [Overview of the Test App](#Overview-of-example-testapp)  
+1. [Test App Details](#example-testapp-details)  
+    a. [MonitorWith](#monitorwith)  
+    b. [Assertions](#assertions)  
+    c. [Mocks](#mocks)  
+    d. [Configuration](#configuration)
+1. [Overview of the Test Driver](#Overview-of-example-testdriver)  
+1. [Test Driver Details](#example-testdriver-details)  
+    a. [Redis](#redis)  
+    b. [Generators](#generators)  
+    c. [Nodes](#nodes)  
+    d. [Edges](#edges)  
+    e. [DataLoaders](#dataloaders)  
+    f. [Graphs](#graphs)  
+    g. [Testers](#testers)  
+    h. [Visualization](#visualization)
 
 ## Running the Example System
 
@@ -218,13 +230,77 @@ As mentioned in the section above, assertions can return either `boolean` or `As
 
 ### Mocks
 
-should be used sparingly, only for systems that we don't own, can make system difficult to reason about.  mock signature.
+In order to make certain kinds of testing easier, RetroCheck allows you to mock certain kinds of method calls.  This is done using the `@MockWith` annotation, which works in the same way that `@MonitorWith` does.  There are only two differences to be aware of:
 
-implemented using `@MockWith`
+* `@MockWith` *replaces* a method call with a mock method call, whereas `@MonitorWith` *adds* an assertion method call after the specified method call.
+* If we want to mock a method `m` with signature `R m(T t, U u)`, then our mock method `m'` may only have one signature: `public R m'(T t, U u)`
+
+If the return value of a mock method must depend on some other entity in the data model, i.e. if the mock itself represents an entity, then the mock entity can simply be added to the data model (i.e. added to the graph representing the data model), and its value can be loaded into Redis as a key-value pair.  See [Overview of the Test Driver](#Overview-of-example-testdriver) for information on how to do that.
+
+Mocks currently have a limitation that they can only replace code that you own, since it isn't possible to place the `@MockWith` annotation on code that you don't own.  This is unfortunate, since you'll often want to mock code that you don't own.  I'm working on a way of addressing this problem right now, and I'm hoping that this won't be a limitation for long.
 
 ### Configuration
 
-custom configuration, explain service location, turning off aspects
+In this example, RetroCheck is configured using the `ResultEmitter.connect` method, which is defined in the `retrocheck.convenience` library, and is meant to be an easy way of configuring RetroCheck with settings that most people will find useful.  This method connects RetroCheck to Redis (which requires that a Redis instance is available), and configures RetroCheck to emit message to Redis pub-sub channels when assertions succeed and fail.
+
+For a more granular way of configuring RetroCheck, use the `retrocheck.assertion.Actions` class:
+
+```java
+public class Actions {
+	// Turns assertions on or off.
+    public static boolean areAssertionsEnabled = true;
+	// Do test{Success,Failure} events fire?  false for yes, true for no.
+    private static boolean monitorOnlyMode = false;
+	// Do monitor{Success,Failure} events fire?  false for yes, true for no.
+    private static boolean testOnlyMode = false;
+	// Do {test,monitor}Success events fire?  false for yes, true for no.
+    private static boolean failureOnlyMode = true;
+
+	// Event that fires when an assertion succeeds.
+    private static AssertionEvent testSuccessEvent = new AssertionEvent();
+	// Event that fires when an assertion succeeds.
+    private static AssertionEvent monitorSuccessEvent = new AssertionEvent();
+	// Event that fires when an assertion fails.
+    private static AssertionEvent testFailureEvent = new AssertionEvent();
+	// Event that fires when an assertion fails.
+    private static AssertionEvent monitorFailureEvent = new AssertionEvent();
+	// Event that fires when an assertion throws an exception.
+    private static AssertionExceptionEvent assertionExceptionEvent = new AssertionExceptionEvent();
+	// Event that fires when the aspect code throws an exception.
+    private static GeneralExceptionEvent generalExceptionEvent = new GeneralExceptionEvent();
+
+	// A lambda that tells RetroCheck how to create new instances of a particular class.  By default (if no serviceLocator is supplied), this happens by reflection.  Note: reflective creation of objects happens only once, as the result is memoized for future use.  Thus, using reflection here isn't a significant performance hit.
+    private static Function<Class, Object> serviceLocator = schema -> {
+        try {
+            return schema.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    };
+
+	...
+}
+```
+
+All of the private fields shown here has public accessors.  Note that the distinction between "monitor" and "test" events is arbitrary -- they are just two separate sets of events that can be used for pretty much anything.  The idea is that RetroCheck can be used for monitoring (i.e. in prod), where the action taken on assertion success/failure would be e.g. logging, or for testing, where the action taken on assertion success/failure would be e.g. emission of a Redis message.
+
+For mocking, there is also a `retrocheck.mock.Actions` class:
+
+```java
+public class Actions {
+	// Turns mocks on or off.
+    public static boolean areMocksEnabled = true;
+
+	// Service location lambda -- works in the same way as the assertion service locator.
+    private static Function<Class, Object> serviceLocator = schema -> {
+        try {
+            return schema.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    };
+}
+```
 
 ## Overview of `example-testdriver`
 
