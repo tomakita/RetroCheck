@@ -16,7 +16,6 @@ import java.util.function.Function;
 @SpringBootTest
 class UserStatusServiceTests {
 
-	// [Redis]: TODO: not required, can also use for k/v storage
 	// Redis allows RetroCheck to know when assertions in the system under test have failed,
 	// and when tests have ended.
 	private Redis redis = new Redis("redis://localhost:6379");
@@ -32,7 +31,6 @@ class UserStatusServiceTests {
 	@Test
 	void test() {
 
-		// [Generators]: TODO: uniqueness, unification, Generator interface
 		// We use Generators to generate (pseudorandomly) instances of various types.
 		// DefaultGenerator has generators for primitive types, and others can be added
 		// by using the ".with()" method.
@@ -42,7 +40,6 @@ class UserStatusServiceTests {
 								UserStatus.class,
 								(random, status) -> new UserStatus(random.nextInt(), random.nextBoolean()));
 
-		// [Nodes]: TODO: other overloads
 		// Each entity in the system is represented by a Node.
 		Node<Integer> requestId =
 				new Node<>(
@@ -61,7 +58,6 @@ class UserStatusServiceTests {
 
 		List<Node<?>> nodes = Arrays.asList(requestId,	userStatus);
 
-		// [Edges]: TODO: multiedges, other overloads
 		List<Edge<?, ?>> edges =
 					Arrays.asList(
 							new Edge<>(
@@ -101,14 +97,12 @@ class UserStatusServiceTests {
 			}
 		});
 
-		// [DataLoaders]: TODO: truncater, entry points, when data is inserted/deleted/truncated
 		DefaultDataLoader dataLoader = new DefaultDataLoader(loader, unloader, redis);
 
 		// This object orchestrates the entire test.  Note that its preprocess, process, and postprocess
 		// methods must all be called, and in that order.  Preprocess and postprocess should be called
 		// once per test, whereas process may be called an arbitrary number of times per test.
 		DefaultTester tester = new DefaultTester("RetroCheck Example");
-		// [Graphs]: TODO: acyclic, subgraphs, subgraph archetypes, seeding
 		DefaultGraph graph = new DefaultGraph().withNodes(nodes).withEdges(edges);
 		tester.preprocess(graph);
 

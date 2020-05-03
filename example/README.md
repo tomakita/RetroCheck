@@ -153,6 +153,10 @@ public class MemcachedConfig {
 }
 ```
 
+## `example-testapp` Details
+
+x
+
 ## Overview of `example-testdriver`
 
 Here is the test driver code that invokes the `/userstatus` end point in UserStatusService, which will invoke its assertion code, as well.  When the assertion we've written in UserStatusService succeeds or fails, messages will be put onto Redis pub-sub channels, and our test driver will be notified.  This test driver code runs as a junit test.
@@ -312,6 +316,8 @@ class UserStatusServiceTests {
 }
 ```
 
+## `example-testdriver` Details
+
 ### Redis
 
 Redis is used by `retrocheck.convenience` for assertion eventing.  If can also be used for key-value storage, if that's something that you want to use during testing, e.g. as a backing data store for mocks.  If you don't want to use `retrocheck.convenience`, then Redis isn't a dependency.
@@ -429,4 +435,24 @@ public Outcome(String name, boolean completeImmediately)
 
 ### Visualization
 
-TODO: visualization, where it's written to, how to use it
+When it runs (via `DefaultTester.postprocess`), RetroCheck emits an HTML visualization of your data model, and all generated instances of it.  The files (`graph_visualization.html/js/css`) containing this visualization are written to the location of your test driving application -- in the case of `example-testdriver`, this is the root directory of the project.  If you open the generated `graph_visualization.html` with a web browser, here's what you see, in the case of `example-testdriver`:
+
+![overview](viz_overview.png)
+
+The visualization shows each node and edge in the graph representing your data model.  Each node and edge is accompanied by the probability with which it's included in the data model.
+
+There are two dropdowns in the top-left corner of the page:
+
+![graph_detail](viz_graph_dropdown.png)
+
+The left-most dropdown contains a list of graphs to view.  The first graph (labeled "base") is unchanged from the set of nodes and edges that you specified in the `Graph` instance on which you run each test.  The remaining graphs in the dropdown (labeled "choice n") are instances of the base graph that RetroCheck has created, by generating entity values for each node, also by choosing whether to include each node and edge.  Nodes and edges which have been omitted from the graph won't be visible, here.
+
+![subgraph_detail](viz_subgraph_dropdown.png)
+
+The right-most dropdown contains a list of subgraphs of the currently chosen graph, so you can view them in isolation.  This graph has no subgraphs, so all of its nodes and edges are in the "ROOT" subgraph.
+
+In the bottom-left corner of the page, there's a table in which the generated values of each entity are displayed:
+
+![entities_detail](viz_entity_values.png)
+
+This table is not visible for the "base" graph.
