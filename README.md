@@ -4,6 +4,8 @@
 
 RetroCheck is a tool that makes it easier to test systems that would otherwise be hard or impossible to write automated tests for.  When testing a system using RetroCheck, you specify a data model and correctness properties for your system, and RetroCheck generates instances of that data model and uses them to exercise your system and check the correctness properties that you specified.
 
+For those who are familiar with [property-based testing](https://fsharpforfunandprofit.com/posts/property-based-testing/), RetroCheck could be described as property-based testing in which tests are composable, and in which dependent data generation is supported.
+
 ## Goals
 
 - Make automated end-to-end testing of distributed systems significantly easier.
