@@ -45,3 +45,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     compile group: 'com.pholser', name: 'junit-quickcheck-core', version: '0.9.1'
 }
+
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
