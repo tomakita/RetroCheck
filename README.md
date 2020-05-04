@@ -73,7 +73,7 @@ Expresses entities, constraints, and data models.  Loads and unloads data models
 
 Conveniently configures assertions and test runners to interact with Redis.  Conveniently generates entity values.  Conveniently orchestrates tests: starts and stops tests, and loads and unloads data models from data stores automatically as tests start and stop.
 
-### Dependencies
+## Dependencies
 
 - retrocheck.assertion: AspectJ
 - retrocheck.mock: AspectJ
@@ -81,6 +81,33 @@ Conveniently configures assertions and test runners to interact with Redis.  Con
 - retrocheck.convenience: Redis (for emitting assertion results to test runners, and for mock data storage), Redisson, retrocheck.assertion, junit-quickcheck (for entity generation), Awaitility (for waiting for tests to complete)
 
 All libraries require JRE 1.8 or above.
+
+## How to Get It
+
+RetroCheck is hosted on [JitPack](https://jitpack.io/#tomakita/RetroCheck).  To add it to your Gradle project:
+
+```groovy
+// This references all four of the RetroCheck libraries.
+implementation 'com.github.tomakita:RetroCheck:0.1.12'
+
+// Just the assertion library.
+implementation 'com.github.tomakita.RetroCheck:assertion:0.1.12'
+// Just the mock library.
+implementation 'com.github.tomakita.RetroCheck:mock:0.1.12'
+// Just the graph library.
+implementation 'com.github.tomakita.RetroCheck:graph:0.1.12'
+// Just the convenience library.
+implementation 'com.github.tomakita.RetroCheck:convenience:0.1.12'
+
+// Regardless of how you reference the assertion library, you need to do this in
+// order to add its aspect files to the classpath.
+// (Not applicable if you aren't using the assertion library).
+aspect 'com.github.tomakita.RetroCheck:assertion:0.1.12'
+// Regardless of how you reference the mock library, you need to do this in
+// order to add its aspect files to the classpath.
+// (Not applicable if you aren't using the mock library).
+aspect 'com.github.tomakita.RetroCheck:mock:0.1.12'
+```
 
 ## Contributing
 
