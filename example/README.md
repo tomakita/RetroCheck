@@ -47,20 +47,24 @@ plugins {
 
 ...
 
-dependencies {
-	// This library is required in order to use assertions.
-	implementation files('assertion-0.1.1.jar')
-	// This tells the AspectJ plugin where to find the RetroCheck assertion code.
-	aspect files('assertion-0.1.1.jar')
-	// This library is required in order to use mocks.
-	implementation files('mock-0.1.1.jar')
-	// This tells the AspectJ plugin where to find the RetroCheck mock code.
-	aspect files('mock-0.1.1.jar')
-	// This library is required in order to configure RetroCheck in a less verbose way,
-	// and also to allow assertions and mocks to interact with Redis.
-	implementation files('convenience-0.1.1.jar')
+repositories {
+	...
 
-	// This library is a dependency of the convenience library.
+	// RetroCheck is hosted on JitPack.
+	maven { url 'https://jitpack.io' }
+}
+
+...
+
+dependencies {
+	// This references all four of the RetroCheck libraries.
+	implementation 'com.github.tomakita:RetroCheck:0.1.12'
+	// This loads the aspect code in the retrocheck.assertion library.
+	aspect 'com.github.tomakita.RetroCheck:assertion:0.1.12'
+	// This loads the aspect code in the retrocheck.mock library.
+	aspect 'com.github.tomakita.RetroCheck:mock:0.1.12'
+
+	// This library is a dependency of the retrocheck.convenience library.
 	compile group: 'org.redisson', name: 'redisson', version: '3.12.0'
 
 	...
@@ -311,13 +315,18 @@ Here is a snippet from `example-testdriver/build.gradle`, showing what's require
 ```groovy
 ...
 
+repositories {
+	...
+
+	// RetroCheck is hosted on JitPack.
+	maven { url 'https://jitpack.io' }
+}
+
+...
+
 dependencies {
-	// This library is required in order to construct the data model of the system under test.
-	implementation files('graph-0.1.1.jar')
-	// This library contains convenience classes that make test orchestration easier.
-	implementation files('convenience-0.1.1.jar')
-	// This library is a dependency of the convenience library, above.
-	implementation files('assertion-0.1.1.jar')
+	// This references all four of the RetroCheck libraries.
+	implementation 'com.github.tomakita:RetroCheck:0.1.12'
 
 	// These libraries are dependencies of the convenience library.
 	compile group: 'com.pholser', name: 'junit-quickcheck-generators', version: '0.9'

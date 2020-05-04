@@ -10,16 +10,15 @@ sourceCompatibility = '1.8'
 
 repositories {
 	mavenCentral()
+	// RetroCheck is hosted on JitPack.
+	maven { url 'https://jitpack.io' }
 }
 
 dependencies {
-	// This library is required in order to construct the data model of the system under test.
-	implementation files('graph-0.1.1.jar')
-	// This library contains convenience classes that make test orchestration easier.
-	implementation files('convenience-0.1.1.jar')
-	// This library is a dependency of the convenience library, above.
-	implementation files('assertion-0.1.1.jar')
+	// This references all four of the RetroCheck libraries.
+	implementation 'com.github.tomakita:RetroCheck:0.1.12'
 
+	// These libraries are dependencies of the convenience library.
 	compile group: 'com.pholser', name: 'junit-quickcheck-generators', version: '0.9'
 	compile group: 'com.googlecode.xmemcached', name: 'xmemcached', version: '2.4.6'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
