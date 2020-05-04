@@ -7,7 +7,7 @@ plugins {
 publishing {
     publications {
         maven(MavenPublication) {
-            groupId = 'com.retrocheck'
+            groupId = 'com.github.tomakita.RetroCheck'
             artifactId = 'convenience'
 
             from components.java
