@@ -14,11 +14,11 @@
 - Associates generators with nodes, and constraint functions with edges.
 - Associates a data loader with each node, so that the entity represented by each node can be conveniently loaded into the appropriate data store.
 - Creates an instance of a data model according to the generators associated with each node, and the constraints associated with each edge, via data model realization.
-- Generates HTML/JS/CSS visualizations of both the data model specified by the user, as well as realizations of that data model created by the retrocheck.graph library.
+- Generates HTML/JS/CSS visualizations of the data model specified by the user, as well as of realizations of that data model created by the retrocheck.graph library.
 
 ## Data Model as Graph
 
-A graph is a collection of nodes, edges, and smaller graphs.  Formally, a `Graph<N, E>` is a collection of `N extends NodeShape`, `E extends EdgeShape`, and `Subgraph<N, E>`.
+A graph is a collection of nodes, edges, and smaller graphs.  Formally, a `Graph` is a collection of `Node<?>`s, `Edge<?, ?>`s, and `Subgraph`s.
 
 Generators are implemented by the user (or by `DefaultGenerator`) as classes which extend the `Generator` interface.
 
@@ -40,7 +40,7 @@ Data model realization supports the notion of edge sets.  For example, given thr
 
 ## Data Model Realization
 
-Data model realization is a process which takes a data model and returns an instance of it.  More formally, data model realization is a transformation which turns a `Graph<N, E>` into a `Workflow`.  In this documentation, "data model realization" can refer either to the aforementioned transformation, or to the resulting `Workflow` instance.
+Data model realization is a process which takes a data model and returns an instance of it.  More formally, data model realization is a transformation which turns a `Graph` into a `Workflow`.  In this documentation, "data model realization" can refer either to the aforementioned transformation, or to the resulting `Workflow` instance.
 
 The `Workflow` that is created by data model realization has to meet the following requirements:
 
@@ -48,30 +48,23 @@ The `Workflow` that is created by data model realization has to meet the followi
 2. Entity instances are generated for each chosen node, and constraints are satisfied for each chosen edge.
 3. Entity instances are ordered in the resulting `Workflow` such that they can be loaded into data stores without violating any constraints (e.g. foreign key constraints), and vice-versa for unloading.
 
-Data model realization is implemented as a sequence of depth-first searches on the `Graph<N, E>` representing the data model, along with a few intermediate steps:
+Data model realization is implemented as a sequence of depth-first searches on the `Graph` representing the data model, along with a few intermediate steps:
 
 1. Source nodes are found (nodes without in-edges).  Each DFS begins from these nodes.
 2. DFS to find the level of each node in the resulting depth-first tree.  These levels are used to determine the order in which nodes are added to the `Workflow` that results from data model realization.
 3. Null nodes are added to the graph.  These nodes are used to make it so all edges are part of an edge set, which makes the rest of this process easier.
 4. Edges are chosen, and then nodes are chosen.
-5. DFS to create entity instances for each chosen node, by using the `Generator` associated with each node (via `NodeShape.refine()`).
-6. DFS to satisfy constraints for each edge, by executing the lambda associated with each edge (via `EdgeShape.refine()`).
+5. DFS to create entity instances for each chosen node, by using the `Generator` associated with each node (via `Node<T>.refine()`).
+6. DFS to satisfy constraints for each chosen edge, by executing the lambda associated with each edge (via `Edge<U, V>.refine()`).
 
 These steps are implemented in the `Preprocessor` and `Processor` classes.
 
 ## Data Loading
 
-Data loading is implemented with the `DataLoader` class, which is meant to orchestrate the loading and unloading of entity instances in a `Workflow`.
+Data loading is done by implementors of the `DataLoader` interface (or with `DefaultDataLoader`), which is meant to orchestrate the loading and unloading of entity instances in a `Workflow`.
 
 ## Visualization
 
 The data model realization process generates JSON that represents the graph that has been realized.  This JSON is injected into a JavaScript file (`graph_visualization.js`), which is then loaded by an HTML visualization (`graph_visualization.html`) of the user-specified data model and all of its realizations.
-
-The visualization page has two drop-downs in the top-left corner:
-
-- The left-most drop-down controls which graph realization is displayed.  Choice 0 in this dropdown displays the user-specified data model.  Choice 1 displays a graph that is used internally by retrocheck.graph -- this graph includes the null nodes mentioned in step 3 of data model realization.  Choices 2 through (n-1) are different realizations of the data model.
-- The right-most drop-down controls which subgraph is displayed, for the chosen data model realization.
-
-Under graph visualizations 2 through (n-1) is a table that lists each entity along with its generated value.
 
 The visualizations are implemented using Cytoscape.js.

@@ -3,6 +3,7 @@
 ## Definitions
 
 *Action*: Code that runs after an assertion succeeds, fails, or throws an exception.
+
 *Aspect code*: Code that is internal to the retrocheck.assertion library, which locates and executes assertions.
 
 ## Features
@@ -21,7 +22,7 @@ When the aspect code detects the execution of a function which has been annotate
 
 If service location succeeds, the class and method that were located are memoized for later use, and then executed.  The result of the assertion is then passed to `AssertionEvent` instances, for handling by the user.
 
-In the event that the (attempted) execution of an assertion results in an exception or error, it is logged (to std out) and swallowed by the assertion execution framework, so that execution of system code is not affected.
+In the event that the (attempted) execution of an assertion results in an exception or error, it is optionally handled by the user, and swallowed by the assertion execution framework, so that execution of system code is not affected.
 
 ## Actions
 

@@ -23,7 +23,7 @@ public class UserStatusController {
 
     @RequestMapping("/userstatus")
     // The MonitorWith annotation tells RetroCheck where to find the assertion for
-    // the userStats method.
+    // the userStatus method.
     @MonitorWith(UserStatusControllerAssertions.class)
     public UserStatus userStatus(@RequestParam(value="userId") Integer userId)
             throws InterruptedException, MemcachedException, TimeoutException {
@@ -31,6 +31,7 @@ public class UserStatusController {
         System.out.println("Serving request for user id = " + userId);
 
         // Due to mocking, this is actually a call to MockMetricsClient.emit.
+        // If this is your first read of this document, feel free to ignore this.
         metricsClient.emit();
 
         return findUserStatus(userId);

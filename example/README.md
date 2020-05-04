@@ -29,6 +29,8 @@ Requirements:
 
 From `/example`, run `docker-compose up -d`.  This starts the memcached and Redis containers that the example system depends on.  Then start `example-app` by running `./gradlew bootRun` (or in an IDE), and run the test in `example-testdriver` by running `./gradlew test` (or in an IDE).
 
+The example uses the `retrocheck.convenience` library, so this document is written under the assumption that you're using that library.
+
 ## Overview of `example-app`
 
 On `/userstatus`, UserStatusService serves requests for a user's status -- whether or not a user is logged in.  UserStatusService does this by querying memcached with the user's ID.
@@ -87,7 +89,7 @@ public class UserStatusController {
 
     @RequestMapping("/userstatus")
     // The MonitorWith annotation tells RetroCheck where to find the assertion for
-    // the userStats method.
+    // the userStatus method.
     @MonitorWith(UserStatusControllerAssertions.class)
     public UserStatus userStatus(@RequestParam(value="userId") Integer userId)
             throws InterruptedException, MemcachedException, TimeoutException {
@@ -95,6 +97,7 @@ public class UserStatusController {
         System.out.println("Serving request for user id = " + userId);
 
         // Due to mocking, this is actually a call to MockMetricsClient.emit.
+		// If this is your first read of this document, feel free to ignore this.
         metricsClient.emit();
 
         return findUserStatus(userId);
@@ -157,7 +160,7 @@ public class UserStatusControllerAssertions {
 }
 ```
 
-Here is the `MetricsClient` implementation.  We'd like to mock the call to `MetricsClient.emit`:
+Here is the `MetricsClient` implementation.  We'd like to mock the call to `MetricsClient.emit`.  If this is your first read of this document, feel free to ignore this:
 
 ```java
 public class MetricsClient {
@@ -169,7 +172,7 @@ public class MetricsClient {
 }
 ```
 
-Here is the mock implementation of `MetricsClient`:
+Here is the mock implementation of `MetricsClient`.  If this is your first read of this document, feel free to ignore this:
 
 ```java
 public class MetricsClientMock {
@@ -179,7 +182,7 @@ public class MetricsClientMock {
 }
 ```
 
-And here is the code that configures the application to use RetroCheck (the code in this file also configures memcached):
+And here is the code that configures the application to use RetroCheck (the code in this file also configures memcached -- it's just a convenient place to put the RetroCheck configuration code, since it runs on startup):
 
 UserStatusService/MemcachedConfig.java:
 ```java
@@ -197,11 +200,7 @@ public class MemcachedConfig {
                 context::getBean); // Service locator method.
     }
 
-    @Bean
-    public MemcachedClient memcached() throws IOException {
-
-        return new XMemcachedClient("localhost",11211);
-    }
+    ...
 }
 ```
 
@@ -209,12 +208,12 @@ public class MemcachedConfig {
 
 ### MonitorWith
 
-The `@MonitorWith(A.class)` annotation associates a method `m` in the system under test with an assertion method `a`.  In order for RetroCheck to perform this association, the following rules must be satisfied:
+When placed on a method `m`, the `@MonitorWith(A.class)` annotation associates `m` with an assertion method `a`.  In order for RetroCheck to perform this association, the following rules must be satisfied:
 
 * `a` must be defined in class `A`
 * `a` must have the same name as `m`
 * `a` must not be overloaded
-* given the following signature for `m`: `R m(T t, U u)`, and assuming that `m` is defined on class `M`, `a` must have one of the following signatures:
+* given the following signature for `m`: `any-access-modifier R m(T t, U u)`, and assuming that `m` is defined on class `M`, `a` must have one of the following signatures:
 	* `public boolean a(T t, U u, R r)`
 	* `public boolean a(T t, U u, R r, M m)`
 	* `public boolean a(T t, U u, R r, Exception ex)`
@@ -228,16 +227,18 @@ The `@MonitorWith(A.class)` annotation associates a method `m` in the system und
 
 Note: if `R` is `void`, then omit `R r` from each of the signatures, above.
 
+Note: the signature variants with `Exception ex` are meant to allow assertions to check that an exception has been thrown.  The value supplied for this parameter will be `null` if no exception has been thrown.
+
 ### Assertions
 
 As mentioned in the section above, assertions can return either `boolean` or `AssertionResult`.  For more information about the usage of `AssertionResult`, see [Testers](#Testers).
 
 ### Mocks
 
-In order to make certain kinds of testing easier, RetroCheck allows you to mock certain kinds of method calls.  This is done using the `@MockWith` annotation, which works in the same way that `@MonitorWith` does.  There are only two differences to be aware of:
+RetroCheck is meant to be used with real network dependencies (e.g. real databases, real message queues, etc).  However, in order to make certain kinds of testing easier, RetroCheck allows you to mock certain kinds of method calls.  This is done using the `@MockWith` annotation, which works in the same way that `@MonitorWith` does.  There are only two differences to be aware of:
 
 * `@MockWith` *replaces* a method call with a mock method call, whereas `@MonitorWith` *adds* an assertion method call after the specified method call.
-* If we want to mock a method `m` with signature `R m(T t, U u)`, then our mock method `m'` may only have one signature: `public R m'(T t, U u)`
+* If we want to mock a method `m` with signature `any-access-modifier R m(T t, U u)`, then our mock method `m'` may have only one signature: `public R m'(T t, U u)`
 
 If the return value of a mock method must depend on some other entity in the data model, i.e. if the mock itself represents an entity, then the mock entity can simply be added to the data model (i.e. added to the graph representing the data model), and its value can be loaded into Redis as a key-value pair.  See [Overview of the Test Driver](#Overview-of-example-testdriver) for information on how to do that.
 
@@ -245,7 +246,7 @@ Mocks currently have a limitation that they can only replace code that you own, 
 
 ### Configuration
 
-In this example, RetroCheck is configured using the `ResultEmitter.connect` method, which is defined in the `retrocheck.convenience` library, and is meant to be an easy way of configuring RetroCheck with settings that most people will find useful.  This method connects RetroCheck to Redis (which requires that a Redis instance is available), and configures RetroCheck to emit message to Redis pub-sub channels when assertions succeed and fail.
+In this example, RetroCheck is configured using the `ResultEmitter.connect` method, which is defined in the `retrocheck.convenience` library, and is meant to be an easy way of configuring RetroCheck with settings that most people will find useful.  This method connects RetroCheck to Redis (which requires that a Redis instance is available), and configures RetroCheck to emit messages to Redis pub-sub channels when assertions succeed and fail.
 
 For a more granular way of configuring RetroCheck, use the `retrocheck.assertion.Actions` class:
 
@@ -273,7 +274,10 @@ public class Actions {
 	// Event that fires when the aspect code throws an exception.
     private static GeneralExceptionEvent generalExceptionEvent = new GeneralExceptionEvent();
 
-	// A lambda that tells RetroCheck how to create new instances of a particular class.  By default (if no serviceLocator is supplied), this happens by reflection.  Note: reflective creation of objects happens only once, as the result is memoized for future use.  Thus, using reflection here isn't a significant performance hit.
+	// A lambda that tells RetroCheck how to create new instances of a particular class.
+	// By default (if no serviceLocator is supplied), this happens by reflection.  
+	// Note: reflective creation of objects happens only once, as the result is memoized 
+	// for future use.  Thus, using reflection here isn't a significant performance hit.
     private static Function<Class, Object> serviceLocator = schema -> {
         try {
             return schema.newInstance();
@@ -286,7 +290,7 @@ public class Actions {
 }
 ```
 
-All of the private fields shown here has public accessors.  Note that the distinction between "monitor" and "test" events is arbitrary -- they are just two separate sets of events that can be used for pretty much anything.  The idea is that RetroCheck can be used for monitoring (i.e. in prod), where the action taken on assertion success/failure would be e.g. logging, or for testing, where the action taken on assertion success/failure would be e.g. emission of a Redis message.
+All of the private fields shown here have public accessors.  Note that the distinction between "monitor" and "test" events is arbitrary -- they are just two separate sets of events that can be used for pretty much anything.  The idea is that RetroCheck can be used for monitoring (i.e. in prod), where the action taken on assertion success/failure would be e.g. logging, or for testing, where the action taken on assertion success/failure would be e.g. emission of a Redis message.
 
 For mocking, there is also a `retrocheck.mock.Actions` class:
 
@@ -353,7 +357,8 @@ class UserStatusServiceTests {
 	// This is a dependency of the system under test.  It's where the status (logged in
 	// or not) of users is stored.
 	private MemcachedClient memcached = new XMemcachedClient("localhost",11211);
-	// This is an object that the tests use to send HTTP requests to the system under test.
+	// This is also a dependency of the system under test.  It's an object that's used to
+	// send HTTP requests to the UserStatusService.
 	private TestAppClient testAppClient = new TestAppClient();
 
 	UserStatusServiceTests() throws IOException {}
@@ -378,7 +383,7 @@ class UserStatusServiceTests {
 						generator, // This is how the Node type knows how to generator Integer instances.
 						"http", // Tells the DataLoader how to load instances of this entity.
 						true, // Is this entity used to invoke the system?
-						true); // Does this entity need to be deleted at the end of each test?
+						true); // Can we skip deletion of this entity at the end of each test?
 		Node<UserStatus> userStatus =
 				new Node<>(
 						"user status",
@@ -468,7 +473,7 @@ class UserStatusServiceTests {
 
 ### Redis
 
-Redis is used by `retrocheck.convenience` for assertion eventing.  If can also be used for key-value storage, if that's something that you want to use during testing, e.g. as a backing data store for mocks.  If you don't want to use `retrocheck.convenience`, then Redis isn't a dependency.
+Redis is used by `retrocheck.convenience` for assertion eventing.  It can also be used for key-value storage, if that's something that you want to use during testing, e.g. as a backing data store for mocks.  If you don't want to use `retrocheck.convenience`, then Redis isn't a dependency.
 
 ### Generators
 
@@ -495,12 +500,16 @@ The `Node<T>` constructor has other overloads.  Here's the one that allows all o
 public Node(
 	String name, // The name of the node -- used for visualization.  Required.
 	Class<T> entitySchema, // The type of the node.  Required.
-	Function<T, T> refinement, // A lambda that defines a transformation on the value generated (by the Generator passed in, below) for this node.  Optional -- defaults to the identity function.
+	Function<T, T> refinement, // A lambda that defines a transformation on the value 
+	// generated (by the Generator passed in, below) for this node.  Optional -- defaults to the identity function.
 	Generator generator, // A Generator that generates values for the type of this node.  Required.
 	String dataLoaderName, // The name of the DataLoader that should load this node into the system under test.  Required.
-	boolean isEntryPoint, // Is this node the entry point of the system under test?  Optional -- defaults to false.
-	Probability probability, // The probability with which this node should be included in our data model.  Optional -- defaults to Probability.ALWAYS a/k/a new Probability(100), so the node will be included with 100% probability.
-	boolean isTransient) // Does this node need to be deleted at the end of each test run?  Optional -- defaults to false.
+	boolean isEntryPoint, // Is this node one of the entry points of the system under test?  Optional -- defaults to false.
+	Probability probability, // The probability with which this node should be included
+	// in our data model.  Optional -- defaults to Probability.ALWAYS a/k/a new Probability(100), so the node
+	// will be included with 100% probability.
+	boolean isTransient) // Can we skip deletion of this node's entity at the end of each test run?
+	// Optional -- defaults to false.
 ```
 
 ### Edges
@@ -514,13 +523,15 @@ public Edge(
 	Node<U> u, // An edge from u...  Required.
 	Node<V> v, // ...to v.  Required.
 	BiFunction<U, V, V> refinement, // The constraint represented by the edge.  Required.
-	Probability probability, // The probability with which the edge is expressed in the data model.  Optional -- defaults to Probability.ALWAYS.
-	String setId) // The set of which this edge is a member.  Optional -- defaults to a value which indicates that the edge is not part of any set.
+	Probability probability, // The probability with which the edge is expressed in the 
+	// data model.  Optional -- defaults to Probability.ALWAYS.
+	String setId) // The set of which this edge is a member.  Optional -- defaults to a 
+	// value which indicates that the edge is not part of any set.
 ```
 
 ### DataLoaders
 
-A `DataLoader` (implemented by `DefaultDataLoader` in the example) is how RetroCheck orchestrates the un/loading of data into and out of the system under test.  The `loader` map loads loads each generated entity, and the `unloader` map unloads each generated entity.  In some cases, though, this won't be enough.  For example, if the system under test generates and persists its own data during a test run, it may be necessary to make sure that data is deleted, too.  To support this, `DefaultDataLoader` uses a `truncater` (specified as a map, just like `loader` and `unloader`), which specifies lambdas for doing ad-hoc cleanup, e.g. truncating a database table.
+A `DataLoader` (implemented by `DefaultDataLoader` in the example) is how RetroCheck orchestrates the un/loading of data into and out of the system under test.  The `loader` map loads each generated entity, and the `unloader` map unloads each generated entity.  In some cases, though, this won't be enough.  For example, if the system under test generates and persists its own data during a test run, it may be necessary to make sure that data is deleted, too.  To support this, `DefaultDataLoader` uses a `truncater` (specified as a map, just like `loader` and `unloader`), which specifies lambdas for doing ad-hoc cleanup, e.g. truncating a database table.
 
 ### Graphs
 
@@ -561,16 +572,19 @@ A `Tester` (implemented by `DefaultTester` in this example) is used to orchestra
 
 There are multiple ways in which a `Tester` can listen for the end of each test:
 
-* Via the `Outcome` instance passed to `Tester.process`.  In this case, the `Tester` will listen (via Redis) for the completion of an assertion method with this name (unfortunately, fully-qualified method names aren't supported, yet), and will end the test when it knows the specified assertion method has completed.
-* Via a `com.retrocheck.assertion.AssertionResult` returned by assertion methods.
+* Via the `Outcome` instance passed to `Tester.process`.  In this case, the `Tester` will listen (via Redis) for the completion of an assertion method with this name (unfortunately, fully-qualified method names aren't supported, yet), and will end the test when it knows the specified assertion method has completed.  By default, `DefaultTester` will wait 60 seconds for a test to complete, and will then time out.  This timeout can be configured using `DefaultDataLoader.setTimeoutMillis`.
+* Via a `retrocheck.assertion.AssertionResult` returned by assertion methods.
 * Via a combination of the two ways outlined above.
 
-All assertion methods can return either `boolean` or `com.retrocheck.assertion.AssertionResult`.  `com.retrocheck.assertion.AssertionResult` is a class that contains information about the result of an assertion:
+All assertion methods can return either `boolean` or `retrocheck.assertion.AssertionResult`.  `retrocheck.assertion.AssertionResult` is a class that contains information about the result of an assertion:
 
 ```java
 public AssertionResult(
 	boolean isSuccess, // Was the assertion successful?
-	String continuation, // What is the name of the assertion method that indicates the end of the current test?  This will be returned to the Tester, and listened for accordingly.  If an assertion method supplies its own name for this value, then the Tester will listen for the *next* invocation of this assertion method.  This is a way of supporting recursive systems.
+	String continuation, // The name of the assertion method that indicates the end of
+	// the current test.  This will be returned to the Tester, and listened for accordingly.
+	// If an assertion method supplies its own name for this value, then the Tester will
+	// listen for the *next* invocation of this assertion method.  This is a way of supporting recursive systems.
 	boolean isExecutionComplete) // Should the test end right now, ignoring all previous continuation/outcome names?
 ```
 
@@ -583,7 +597,7 @@ public Outcome(String name, boolean completeImmediately)
 
 ### Visualization
 
-When it runs (via `DefaultTester.postprocess`), RetroCheck emits an HTML visualization of your data model, and all generated instances of it.  The files (`graph_visualization.html/js/css`) containing this visualization are written to the location of your test driving application -- in the case of `example-testdriver`, this is the root directory of the project.  If you open the generated `graph_visualization.html` with a web browser, here's what you see, in the case of `example-testdriver`:
+When it runs, RetroCheck emits an HTML visualization of your data model (via `DefaultTester.postprocess`), and all generated instances of it.  The files (`graph_visualization.html/js/css`) containing this visualization are written to the location of your test driving application -- in the case of `example-testdriver`, this is the root directory of the project.  If you open the generated `graph_visualization.html` with a web browser, here's what you see, in the case of `example-testdriver`:
 
 ![overview](viz_overview.png)
 
@@ -593,7 +607,7 @@ There are two dropdowns in the top-left corner of the page:
 
 ![graph_detail](viz_graph_dropdown.png)
 
-The left-most dropdown contains a list of graphs to view.  The first graph (labeled "base") is unchanged from the set of nodes and edges that you specified in the `Graph` instance on which you run each test.  The remaining graphs in the dropdown (labeled "choice n") are instances of the base graph that RetroCheck has created, by generating entity values for each node, also by choosing whether to include each node and edge.  Nodes and edges which have been omitted from the graph won't be visible, here.
+The left-most dropdown contains a list of graphs to view.  The first graph (labeled "base") is unchanged from the set of nodes and edges that you specified in the `Graph` instance on which you run each test.  The remaining graphs in the dropdown (labeled "choice n") are instances of the base graph that RetroCheck has created, by generating entity values for each node, and also by choosing whether to include each node and edge.  Nodes and edges which have been omitted from the graph won't be visible, here.
 
 ![subgraph_detail](viz_subgraph_dropdown.png)
 

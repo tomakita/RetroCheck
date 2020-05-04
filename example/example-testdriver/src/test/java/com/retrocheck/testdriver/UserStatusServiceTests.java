@@ -23,7 +23,8 @@ class UserStatusServiceTests {
 	// This is a dependency of the system under test.  It's where the status (logged in
 	// or not) of users is stored.
 	private MemcachedClient memcached = new XMemcachedClient("localhost",11211);
-	// This is an object that the tests use to send HTTP requests to the system under test.
+	// This is also a dependency of the system under test.  It's an object that's used to
+	// send HTTP requests to the UserStatusService.
 	private TestAppClient testAppClient = new TestAppClient();
 
 	UserStatusServiceTests() throws IOException {}
@@ -48,7 +49,7 @@ class UserStatusServiceTests {
 						generator, // This is how the Node type knows how to generator Integer instances.
 						"http", // Tells the DataLoader how to load instances of this entity.
 						true, // Is this entity used to invoke the system?
-						true); // Does this entity need to be deleted at the end of each test?
+						true); // Can we skip deletion of this entity at the end of each test?
 		Node<UserStatus> userStatus =
 				new Node<>(
 						"user status",
